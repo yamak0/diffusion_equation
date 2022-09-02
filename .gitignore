@@ -1,3 +1,6 @@
 Main
 build
 *.json
+*png
+*.dat
+*.mp4
