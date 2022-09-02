@@ -58,15 +58,18 @@ void onedimensinal_diffusion::time_step()
         phi[i]=phi[i]-dt*MDphi[i];
     }
 
-    for(int i=0; i<phi.size(); i++){
-        cout << phi[i] << " ";
-    }
-    cout << endl;
+    //for(int i=0; i<phi.size(); i++){
+    //    cout << phi[i] << " ";
+    //}
+    //cout << endl;
 }
 
 void onedimensinal_diffusion::dump(int step, std::string name)
 {
-    string filename = name + "_" + to_string(step) + ".dat";
+    string result_folder = name;
+    mkdir(result_folder.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
+
+    string filename = name+"/"+to_string(step) + ".dat";
     ofstream ofs(filename);
     for(int i=0; i<phi.size(); i++){
         ofs << phi[i] << endl;
