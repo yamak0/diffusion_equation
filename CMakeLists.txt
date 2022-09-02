@@ -79,7 +79,7 @@ message(" ")
 #######
 
 # add_subdirectory(include)
-#add_subdirectory(src)
+add_subdirectory(src)
 
 set(main_target "Main")
 
@@ -93,12 +93,9 @@ target_include_directories(${main_target}
   PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
-#target_link_libraries(${main_target} PRIVATE
-#  ${HDF5_LIBRARIES}
-#  ${HDF5_CXX_LIBRARIES}
-#  Base
-#  H5
-#)
+target_link_libraries(${main_target} PRIVATE
+  Base
+)
 
 install(TARGETS ${main_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
 
