@@ -15,6 +15,11 @@ int main(int argc,char *argv[])
     TextParser tp;
     int div, itr, output_t;
     double coupling_f, coupling_s;
+    double phi_s, phi_f;
+    string outputDir;
+    phi_s = 0.8;
+    phi_f = 0.2;
+    onedimensinal_diffusion Fluid("F"), Solid("S");
 
     int ierror;
     if ((ierror = tp.read(input_file)) != TP_NO_ERROR) {
@@ -48,12 +53,13 @@ int main(int argc,char *argv[])
       cout << label << " is not set" << endl;
       exit(0);
     }
-
-    double c(div);
-    double phi_s, phi_f;
-    phi_s = 0.8;
-    phi_f = 0.2;
-    onedimensinal_diffusion Fluid("F"), Solid("S");
+    label = base_label + "/outputDir";
+    if ( !tp.getInspectedValue(label,outputDir)){
+      cout << label << " is not set" << endl;
+      exit(0);
+    }
+    vector<double> c(div);
+    
     if ((ierror = Fluid.tp.read(input_file)) != TP_NO_ERROR) {
      printf("\tError at reading '%s' file\n", input_file.c_str());
       return 1;
@@ -78,6 +84,7 @@ int main(int argc,char *argv[])
     Solid.calc_K_matrix();
 
     for(int i=0; i<itr; i++){
+        cout << i << endl;
         vector<double> fluid_diff(div), solid_diff(div);
         for(int j=0; j<fluid_diff.size(); j++){
             fluid_diff[j]=-coupling_f*(Fluid.access_c(j)-Solid.access_c(j));
@@ -85,9 +92,19 @@ int main(int argc,char *argv[])
         }
         Fluid.time_step(fluid_diff);
         Solid.time_step(solid_diff);
+        for(int j=0; j<div; j++){
+            c[j] = phi_f*Fluid.access_c(j) + phi_s*Solid.access_c(j);
+        }
         if(i%output_t==0){
             Fluid.dump(i/output_t);
             Solid.dump(i/output_t);
+            mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
+            string filename = outputDir+"/"+to_string(i/output_t) + ".dat";
+            ofstream ofs(filename);
+            for(int j=0; j<c.size(); j++){
+                ofs << c[j] << endl;
+            }
+            ofs.close();
         }
     }
 }

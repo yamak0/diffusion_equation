@@ -151,7 +151,7 @@ void onedimensinal_diffusion::boundary_setting(std::vector<double> boundary)
 
 void onedimensinal_diffusion::time_step(std::vector<double> boundary)
 {
-    //boundary_setting(boundary);
+    boundary_setting(boundary);
     vector<double> Dc(c.size(),0.0);
     vector<double> MDc(c.size(),0.0);
     for(int i=0; i<K.size(); i++){

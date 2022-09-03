@@ -35,12 +35,15 @@ ims = []
 
 for i in range(0,100):
     plt.cla()
-    v,v2 = [],[]
+    v,v2,v3 = [],[],[]
     file_name = "fluid/" + str(i) + ".dat"
     import_data(file_name, v)
     file_name = "solid/" + str(i) + ".dat"
     import_data(file_name, v2) 
+    file_name = "test/" + str(i) + ".dat"
+    import_data(file_name, v3)
     plt.plot(v, color="red")   
-    plt.plot(v2, color="blue")   
+    plt.plot(v2, color="blue")
+    plt.plot(v3, color="green")   
     img_name = "img/image"+str(i)+".png"
     plt.savefig(img_name)
