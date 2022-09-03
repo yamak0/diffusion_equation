@@ -13,6 +13,7 @@ class onedimensinal_diffusion{
         double dt;
         double diffusion_coefficient;
         std::vector<std::vector<int>> element;
+        std::vector<double> c;
         std::vector<double> phi;
         std::vector<double> x;
         std::vector<std::vector<double>> mass;
@@ -23,9 +24,13 @@ class onedimensinal_diffusion{
     public:
         void calc_mass_matrix();
         void calc_K_matrix();
-        void set_boundary_node(int node_number, double value);
-        void time_step();
+        void set_initial_boundary_node(int node_number, double value);
+        void time_step(std::vector<double> boundary);
         void dump(int step, std::string name);
+        void setting_phi(double p);
+        void boundary_setting(std::vector<double> boundary);
+        double access_c(int i);
+        double return_sum();
 
         onedimensinal_diffusion(int numofelem, double dx, double time_step, double D)
         {
@@ -33,6 +38,7 @@ class onedimensinal_diffusion{
             dt=time_step;
             diffusion_coefficient = D;
             element.resize(numofelem);
+            c.resize(numofelem+1);
             phi.resize(numofelem+1);
             x.resize(numofelem+1);
             K.resize(numofelem+1);
