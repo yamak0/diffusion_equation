@@ -37,7 +37,7 @@ void onedimensinal_diffusion::set_initial_boundary_node(int node_number, double 
 {
     b_n.push_back(node_number);
     i_b_n.push_back(value);
-    //c[b_n[0]]=i_b_n[0];
+    c[b_n[0]]=i_b_n[0];
 }
 
 void onedimensinal_diffusion::boundary_setting(std::vector<double> boundary)
@@ -47,7 +47,7 @@ void onedimensinal_diffusion::boundary_setting(std::vector<double> boundary)
 
 void onedimensinal_diffusion::time_step(std::vector<double> boundary)
 {
-    boundary_setting(boundary);
+    //boundary_setting(boundary);
     vector<double> Dc(c.size(),0.0);
     vector<double> MDc(c.size(),0.0);
     for(int i=0; i<K.size(); i++){
