@@ -62,6 +62,11 @@ message( STATUS "CMAKE_CXX_COMPILER    : "      ${CMAKE_CXX_COMPILER})
 message( STATUS "COMPILE_OPTIONS       : "      ${compile_options})
 message(" ")
 
+# TextParser
+set(TP_DIR ${TP_DIR} CACHE PATH "...")
+find_package(TP REQUIRED)
+include_directories(${TP_INCLUDE_DIR})
+
 # HDF5
 #find_package (HDF5 REQUIRED COMPONENTS C CXX)
 #IF(HDF5_FOUND)

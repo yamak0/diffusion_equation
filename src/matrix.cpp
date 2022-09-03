@@ -2,6 +2,121 @@
 
 using namespace std;
 
+void onedimensinal_diffusion::input_parameter()
+{
+    if(material == "F"){
+        string str,base_label,label,disp;
+        base_label = "/Fluid";
+        label = base_label + "/numOfelement";
+        if ( !tp.getInspectedValue(label,numOfelement)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/dx";
+        if ( !tp.getInspectedValue(label,element_length)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/dt";
+        if ( !tp.getInspectedValue(label,dt)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/diffusion_coefficient";
+        if ( !tp.getInspectedValue(label,diffusion_coefficient)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/outputDir";
+        if ( !tp.getInspectedValue(label,outputDir)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/boundary_node";
+        if ( !tp.getInspectedValue(label,boundary_node)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/boundary_value";
+        if ( !tp.getInspectedValue(label,boundary_value)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+    }
+
+    if(material == "S"){
+        string str,base_label,label,disp;
+        base_label = "/Solid";
+        label = base_label + "/numOfelement";
+        if ( !tp.getInspectedValue(label,numOfelement)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/dx";
+        if ( !tp.getInspectedValue(label,element_length)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/dt";
+        if ( !tp.getInspectedValue(label,dt)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/diffusion_coefficient";
+        if ( !tp.getInspectedValue(label,diffusion_coefficient)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/outputDir";
+        if ( !tp.getInspectedValue(label,outputDir)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/boundary_node";
+        if ( !tp.getInspectedValue(label,boundary_node)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/boundary_value";
+        if ( !tp.getInspectedValue(label,boundary_value)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+    }
+}
+
+void onedimensinal_diffusion::initialize()
+{
+    element.resize(numOfelement);
+    c.resize(numOfelement+1);
+    phi.resize(numOfelement+1);
+    x.resize(numOfelement+1);
+    K.resize(numOfelement+1);
+    mass.resize(numOfelement+1);
+
+    for(int i=0; i<K.size(); i++){
+        K[i].resize(numOfelement+1);
+        for(int j=0; j<K[i].size(); j++){
+            K[i][j]=0.0;
+        }
+    }
+    for(int i=0; i<mass.size(); i++){
+        mass[i].resize(numOfelement+1);
+        for(int j=0; j<mass[i].size(); j++){
+            mass[i][j]=0.0;
+        }
+    }
+    for(int i=0; i<element.size(); i++){
+        element[i].resize(2);
+        element[i][0]=i;
+        element[i][1]=i+1;
+    }
+
+    for(int i=0; i<x.size(); i++){
+        x[i]=element_length*i;
+    }
+}
+
 void onedimensinal_diffusion::calc_mass_matrix()
 {
     for(int i=0; i<element.size(); i++){
@@ -10,17 +125,6 @@ void onedimensinal_diffusion::calc_mass_matrix()
         mass[element[i][1]][element[i][0]]+=1.0/6.0*element_length;
         mass[element[i][1]][element[i][1]]+=1.0/3.0*element_length;
     }
-
-    //for(int i=0; i<mass.size(); i++){
-    //    double sum =0.0;
-    //    for(int j=0; j<mass[i].size(); j++){
-    //        sum += mass[i][j];
-    //    }
-    //    for(int j=0; j<mass[i].size(); j++){
-    //        if(i==j) mass[i][j] = 1.0/sum;
-    //        else mass[i][j]=0.0;
-    //    }
-    //}
 }
 
 void onedimensinal_diffusion::calc_K_matrix()
@@ -33,10 +137,10 @@ void onedimensinal_diffusion::calc_K_matrix()
     }
 }
 
-void onedimensinal_diffusion::set_initial_boundary_node(int node_number, double value)
+void onedimensinal_diffusion::set_initial_boundary_node()
 {
-    b_n.push_back(node_number);
-    i_b_n.push_back(value);
+    b_n.push_back(boundary_node);
+    i_b_n.push_back(boundary_value);
     c[b_n[0]]=i_b_n[0];
 }
 
@@ -65,17 +169,15 @@ void onedimensinal_diffusion::time_step(std::vector<double> boundary)
     }
     for(int i=0; i<boundary.size(); i++){
         c[i] += boundary[i];
-        //cout << c[i] << endl;
     }
     //boundary_setting(boundary);
 }
 
-void onedimensinal_diffusion::dump(int step, std::string name)
+void onedimensinal_diffusion::dump(int step)
 {
-    string result_folder = name;
-    mkdir(result_folder.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
+    mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
 
-    string filename = name+"/"+to_string(step) + ".dat";
+    string filename = outputDir+"/"+to_string(step) + ".dat";
     ofstream ofs(filename);
     for(int i=0; i<c.size(); i++){
         ofs << c[i] << endl;

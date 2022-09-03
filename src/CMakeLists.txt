@@ -4,6 +4,10 @@ target_sources(Base
     matrix.cpp
 )
 
-target_include_directories(Base
-  PUBLIC ${PROJECT_SOURCE_DIR}/include
+target_include_directories(Base PUBLIC 
+  ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(Base PRIVATE
+  ${TP_LIBRARY}
 )

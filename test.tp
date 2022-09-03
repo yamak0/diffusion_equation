@@ -1,0 +1,28 @@
+Coupling
+{
+  numOfelement  = 100
+  iteration = 1000
+  coupling_f = 0.2
+  coupling_s = 0.01
+  output_t = 10
+}
+Fluid
+{
+  numOfelement  = 100
+  dx = 0.1
+  dt = 0.01
+  diffusion_coefficient = 10
+  outputDir = "fluid"
+  boundary_node = 0
+  boundary_value = 1.0
+}
+Solid
+{
+  numOfelement  = 100
+  dx = 0.1
+  dt = 0.01
+  diffusion_coefficient = 0.01
+  outputDir = "solid"
+  boundary_node = 50
+  boundary_value = 1.0
+}
