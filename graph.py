@@ -33,7 +33,7 @@ ax.xaxis.set_ticks_position('both')
 
 ims = []
 
-for i in range(0,100):
+for i in range(0,500):
     plt.cla()
     v,v2,v3 = [],[],[]
     file_name = "fluid/" + str(i) + ".dat"

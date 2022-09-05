@@ -93,7 +93,7 @@ void onedimensinal_diffusion::initialize()
     x.resize(numOfelement+1);
     K.resize(numOfelement+1);
     mass.resize(numOfelement+1);
-
+    mass_inv.resize(numOfelement+1);
     for(int i=0; i<K.size(); i++){
         K[i].resize(numOfelement+1);
         for(int j=0; j<K[i].size(); j++){
@@ -104,6 +104,12 @@ void onedimensinal_diffusion::initialize()
         mass[i].resize(numOfelement+1);
         for(int j=0; j<mass[i].size(); j++){
             mass[i][j]=0.0;
+        }
+    }
+    for(int i=0; i<mass_inv.size(); i++){
+        mass_inv[i].resize(numOfelement+1);
+        for(int j=0; j<mass_inv[i].size(); j++){
+            mass_inv[i][j]=0.0;
         }
     }
     for(int i=0; i<element.size(); i++){
@@ -124,6 +130,17 @@ void onedimensinal_diffusion::calc_mass_matrix()
         mass[element[i][0]][element[i][1]]+=1.0/6.0*element_length;
         mass[element[i][1]][element[i][0]]+=1.0/6.0*element_length;
         mass[element[i][1]][element[i][1]]+=1.0/3.0*element_length;
+    }
+    for(int i=0; i<mass.size(); i++){
+        double sum = 0.0;
+        for(int j=0; j<mass[i].size(); j++){
+            sum += mass[i][j];
+            mass[i][j]=0.0;
+        }
+        mass[i][i]=sum;
+    }
+    for(int i =0; i<mass_inv.size(); i++){
+        mass_inv[i][i] = 1.0/mass[i][i];
     }
 }
 
@@ -152,25 +169,31 @@ void onedimensinal_diffusion::boundary_setting(std::vector<double> boundary)
 void onedimensinal_diffusion::time_step(std::vector<double> boundary)
 {
     boundary_setting(boundary);
+    vector<double> R(c.size(), 0.0);
     vector<double> Dc(c.size(),0.0);
-    vector<double> MDc(c.size(),0.0);
+    vector<double> DcR(c.size(), 0.0);
+    vector<double> MDcR(c.size(),0.0);
     for(int i=0; i<K.size(); i++){
         for(int j=0; j<c.size(); j++){
             Dc[i] += K[i][j]*c[j];
         }
     }
     for(int i=0; i<mass.size(); i++){
-        for(int j=0; j<Dc.size(); j++){
-            MDc[i] += mass[i][j]*Dc[j];
+        for(int j=0; j<boundary.size(); j++){
+            R[i]+=mass[i][j]*boundary[j];
+        }
+    }
+    for(int i=0; i<Dc.size(); i++){
+        DcR[i] = Dc[i]-R[i];
+    }
+    for(int i=0; i<mass.size(); i++){
+        for(int j=0; j<DcR.size(); j++){
+            MDcR[i] += mass_inv[i][j]*DcR[j];
         }
     }
     for(int i=0; i<c.size(); i++){
-        c[i]=c[i]-dt*MDc[i];
+        c[i]=c[i]-dt*MDcR[i];
     }
-    for(int i=0; i<boundary.size(); i++){
-        c[i] += boundary[i];
-    }
-    //boundary_setting(boundary);
 }
 
 void onedimensinal_diffusion::dump(int step)

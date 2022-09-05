@@ -89,6 +89,7 @@ int main(int argc,char *argv[])
         for(int j=0; j<fluid_diff.size(); j++){
             fluid_diff[j]=-coupling_f*(Fluid.access_c(j)-Solid.access_c(j));
             solid_diff[j]=-coupling_s*(Solid.access_c(j)-Fluid.access_c(j));
+            //cout << j << " " << fluid_diff[j] << " " << solid_diff[j] << endl;
         }
         Fluid.time_step(fluid_diff);
         Solid.time_step(solid_diff);

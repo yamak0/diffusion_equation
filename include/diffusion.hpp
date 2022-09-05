@@ -23,6 +23,7 @@ class onedimensinal_diffusion{
         std::vector<double> phi;
         std::vector<double> x;
         std::vector<std::vector<double>> mass;
+        std::vector<std::vector<double>> mass_inv;
         std::vector<std::vector<double>> K;
         std::vector<int> b_n;
         std::vector<double> i_b_n;
