@@ -1,10 +1,10 @@
 Coupling
 {
   numOfelement  = 100
-  iteration = 10000
-  coupling_f = 0.2
-  coupling_s = 0.2
-  output_t = 20
+  iteration = 100000
+  coupling_f = 0.05
+  coupling_s = 0.05
+  output_t = 100
   outputDir = "test"
 }
 Fluid
@@ -12,7 +12,7 @@ Fluid
   numOfelement  = 100
   dx = 0.1
   dt = 0.001
-  diffusion_coefficient = 0.1
+  diffusion_coefficient = 1.0
   outputDir = "fluid"
   boundary_node = 0
   boundary_value = 1.0
@@ -22,8 +22,8 @@ Solid
   numOfelement  = 100
   dx = 0.1
   dt = 0.001
-  diffusion_coefficient = 1
+  diffusion_coefficient = 0.1
   outputDir = "solid"
-  boundary_node = 50
-  boundary_value = 0.2
+  boundary_node = 80
+  boundary_value = 0.0
 }

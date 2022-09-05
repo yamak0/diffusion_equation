@@ -33,7 +33,8 @@ ax.xaxis.set_ticks_position('both')
 
 ims = []
 
-for i in range(0,500):
+for i in range(0,1000):
+    print(i)
     plt.cla()
     v,v2,v3 = [],[],[]
     file_name = "fluid/" + str(i) + ".dat"
@@ -42,8 +43,9 @@ for i in range(0,500):
     import_data(file_name, v2) 
     file_name = "test/" + str(i) + ".dat"
     import_data(file_name, v3)
-    plt.plot(v, color="red")   
-    plt.plot(v2, color="blue")
-    plt.plot(v3, color="green")   
+    plt.plot(v, color="red", label="fluid")   
+    plt.plot(v2, color="blue", label="solid")
+    plt.plot(v3, color="green", label="test")   
     img_name = "img/image"+str(i)+".png"
+    plt.legend(fontsize=20)
     plt.savefig(img_name)

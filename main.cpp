@@ -1,5 +1,5 @@
 #include"diffusion.hpp"
-
+#include<cmath>
 using namespace std;
 
 int main(int argc,char *argv[])
@@ -17,8 +17,7 @@ int main(int argc,char *argv[])
     double coupling_f, coupling_s;
     double phi_s, phi_f;
     string outputDir;
-    phi_s = 0.8;
-    phi_f = 0.2;
+    
     onedimensinal_diffusion Fluid("F"), Solid("S");
 
     int ierror;
@@ -58,7 +57,12 @@ int main(int argc,char *argv[])
       cout << label << " is not set" << endl;
       exit(0);
     }
-    vector<double> c(div);
+    vector<double> c(div+1);
+    vector<double> phi(div+1);
+
+    for(int i=0; i<phi.size(); i++){
+      phi[i] = 1.0/(1.0+exp(-((double(i)-50.0)/10.0)));
+    }
     
     if ((ierror = Fluid.tp.read(input_file)) != TP_NO_ERROR) {
      printf("\tError at reading '%s' file\n", input_file.c_str());
@@ -73,8 +77,8 @@ int main(int argc,char *argv[])
     Solid.input_parameter();
     Solid.initialize();
 
-    Fluid.setting_phi(0.2);
-    Solid.setting_phi(0.8);
+    //Fluid.setting_phi(0.2);
+    //Solid.setting_phi(0.8);
 
     Fluid.set_initial_boundary_node();
     Fluid.calc_mass_matrix();
@@ -93,8 +97,8 @@ int main(int argc,char *argv[])
         }
         Fluid.time_step(fluid_diff);
         Solid.time_step(solid_diff);
-        for(int j=0; j<div; j++){
-            c[j] = phi_f*Fluid.access_c(j) + phi_s*Solid.access_c(j);
+        for(int j=0; j<phi.size(); j++){
+            c[j] = (1.0-phi[j])*Fluid.access_c(j) + phi[j]*Solid.access_c(j);
         }
         if(i%output_t==0){
             Fluid.dump(i/output_t);
