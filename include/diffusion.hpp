@@ -34,7 +34,7 @@ class onedimensinal_diffusion{
         void calc_mass_matrix();
         void calc_K_matrix();
         void set_initial_boundary_node();
-        void time_step(std::vector<double> boundary);
+        void time_step(std::vector<double> boundary, int time);
         void dump(int step);
         void setting_phi(double p);
         void boundary_setting(std::vector<double> boundary);

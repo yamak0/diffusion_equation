@@ -166,9 +166,9 @@ void onedimensinal_diffusion::boundary_setting(std::vector<double> boundary)
     c[b_n[0]]=i_b_n[0];
 }
 
-void onedimensinal_diffusion::time_step(std::vector<double> boundary)
+void onedimensinal_diffusion::time_step(std::vector<double> boundary, int time)
 {
-    boundary_setting(boundary);
+    if(material=="F") boundary_setting(boundary);
     vector<double> R(c.size(), 0.0);
     vector<double> Dc(c.size(),0.0);
     vector<double> DcR(c.size(), 0.0);

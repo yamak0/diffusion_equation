@@ -61,9 +61,13 @@ int main(int argc,char *argv[])
     vector<double> phi(div+1);
 
     for(int i=0; i<phi.size(); i++){
-      phi[i] = 1.0/(1.0+exp(-((double(i)-50.0)/10.0)));
+      if(i==70) phi[i] =0.1;
+      else if(i==69 || i==71) phi[i]=0.2;
+      else if(i==68 || i==72) phi[i]=0.3;
+      else phi[i] =0.9;
+      //phi[i] = 1.0/(1.0+exp(-((double(i)-50.0)/10.0)));
     }
-    
+
     if ((ierror = Fluid.tp.read(input_file)) != TP_NO_ERROR) {
      printf("\tError at reading '%s' file\n", input_file.c_str());
       return 1;
@@ -93,10 +97,10 @@ int main(int argc,char *argv[])
         for(int j=0; j<fluid_diff.size(); j++){
             fluid_diff[j]=-coupling_f*(Fluid.access_c(j)-Solid.access_c(j));
             solid_diff[j]=-coupling_s*(Solid.access_c(j)-Fluid.access_c(j));
-            //cout << j << " " << fluid_diff[j] << " " << solid_diff[j] << endl;
+            if(i==itr-1) cout << j << " " << fluid_diff[j] << " " << solid_diff[j] << endl;
         }
-        Fluid.time_step(fluid_diff);
-        Solid.time_step(solid_diff);
+        Fluid.time_step(fluid_diff, i);
+        Solid.time_step(solid_diff, i);
         for(int j=0; j<phi.size(); j++){
             c[j] = (1.0-phi[j])*Fluid.access_c(j) + phi[j]*Solid.access_c(j);
         }

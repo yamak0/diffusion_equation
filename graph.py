@@ -47,5 +47,6 @@ for i in range(0,1000):
     plt.plot(v2, color="blue", label="solid")
     plt.plot(v3, color="green", label="test")   
     img_name = "img/image"+str(i)+".png"
+    plt.ylim(0,1.0)
     plt.legend(fontsize=20)
     plt.savefig(img_name)
