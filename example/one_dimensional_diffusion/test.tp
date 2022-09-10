@@ -2,8 +2,8 @@ Coupling
 {
   numOfelement  = 100
   iteration = 100000
-  coupling_f = 0.05
-  coupling_s = 0.05
+  coupling_f = 0.005
+  coupling_s = 0.005
   output_t = 1000
   outputDir = "test"
 }
