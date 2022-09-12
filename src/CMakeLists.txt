@@ -1,5 +1,6 @@
 add_subdirectory(lib)
 add_subdirectory(one_dimensional_diffusion)
+add_subdirectory(two_dimensional_diffusion)
 #add_library(Base STATIC)
 #target_sources(Base
 #  PRIVATE

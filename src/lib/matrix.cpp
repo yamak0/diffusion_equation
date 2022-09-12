@@ -1,4 +1,4 @@
-#include"diffusion.hpp"
+#include"one_diffusion.hpp"
 
 using namespace std;
 
