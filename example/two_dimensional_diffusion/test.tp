@@ -2,15 +2,38 @@ Geometry
 {
   node_file = "node.dat"
   element_file = "element.dat"
-  boundary_file = "boundary.dat"
   gauss_setting = "square"
 }
 
-calc_settings
+Fluid
 {
   dt = 0.0001
   time_step = 100000
   output_interval = 1000
   diffusion_coefficient = 0.5
-  outputDir = "test"
+  outputDir = "fluid"
+  boundary_file = "boundary_fluid.dat"
+  couplint_coefficient = 0.1
+}
+
+Solid
+{
+  dt = 0.0001
+  time_step = 100000
+  output_interval = 1000
+  diffusion_coefficient = 0.5
+  outputDir = "solid"
+  boundary_file = "boundary_solid.dat"
+  couplint_coefficient = 0.1
+}
+
+Vessel
+{
+  dt = 0.0001
+  time_step = 100000
+  output_interval = 1000
+  diffusion_coefficient = 0.5
+  outputDir = "vessel"
+  boundary_file = "boundary_vessel.dat"
+  couplint_coefficient = 0.1
 }

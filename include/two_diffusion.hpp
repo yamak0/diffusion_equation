@@ -12,9 +12,9 @@
 class twodimensinal_diffusion{
     private:
         double dt;
-        int time, output_interval;
         double diffusion_coefficient;
-        int numOfNode, numOfElm, numOfBoundaryNode;
+        int numOfElm, numOfBoundaryNode;
+        std::string material_judge;
         std::string gauss_setting, outputDir;
         std::string node_file, element_file, boundary_file;
         std::vector<std::vector<double>> node;
@@ -26,7 +26,13 @@ class twodimensinal_diffusion{
         std::vector<double> boundary_value;
         std::vector<std::vector<double>> gauss;
     public:
+        int time, output_interval, numOfNode;
+        double coupling_coefficient;
         TextParser tp;
+        twodimensinal_diffusion(std::string mat)
+        {
+            material_judge = mat;
+        }
         void export_vtu(const std::string &file);
         void input_info(std::string input_file);
         int CountNumbersOfTextLines(std::string &filePath);
@@ -39,6 +45,8 @@ class twodimensinal_diffusion{
         void matrix_initialize();
         void calc_matrix();
         void boundary_setting();
-        void time_step();
+        void time_step(std::vector<double> diff);
+        void dump(int ic);
+        double access_c(int ic);
 };
 #endif

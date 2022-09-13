@@ -26,46 +26,132 @@ void twodimensinal_diffusion::input_info(std::string input_file)
       exit(0);
     }
 
-    label = base_label + "/boundary_file";
-    if ( !tp.getInspectedValue(label,boundary_file)){
-      cout << label << " is not set" << endl;
-      exit(0);
-    }
-
     label = base_label + "/gauss_setting";
     if ( !tp.getInspectedValue(label,gauss_setting)){
       cout << label << " is not set" << endl;
       exit(0);
     }
-    
-    base_label = "/calc_settings";
-    label = base_label + "/dt";
-    if ( !tp.getInspectedValue(label,dt)){
-      cout << label << " is not set" << endl;
-      exit(0);
+    if(material_judge=="F"){
+        base_label = "/Fluid";
+        label = base_label + "/dt";
+        if ( !tp.getInspectedValue(label,dt)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+
+        label = base_label + "/diffusion_coefficient";
+        if ( !tp.getInspectedValue(label,diffusion_coefficient)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+
+        label = base_label + "/time_step";
+        if ( !tp.getInspectedValue(label,time)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/output_interval";
+        if ( !tp.getInspectedValue(label,output_interval)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/outputDir";
+        if ( !tp.getInspectedValue(label,outputDir)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+
+        label = base_label + "/boundary_file";
+        if ( !tp.getInspectedValue(label,boundary_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
+        label = base_label + "/couplint_coefficient";
+        if ( !tp.getInspectedValue(label,coupling_coefficient)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
+    }
+    if(material_judge=="S"){
+        base_label = "/Solid";
+        label = base_label + "/dt";
+        if ( !tp.getInspectedValue(label,dt)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+
+        label = base_label + "/diffusion_coefficient";
+        if ( !tp.getInspectedValue(label,diffusion_coefficient)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+
+        label = base_label + "/time_step";
+        if ( !tp.getInspectedValue(label,time)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/output_interval";
+        if ( !tp.getInspectedValue(label,output_interval)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/outputDir";
+        if ( !tp.getInspectedValue(label,outputDir)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/boundary_file";
+        if ( !tp.getInspectedValue(label,boundary_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
+        label = base_label + "/couplint_coefficient";
+        if ( !tp.getInspectedValue(label,coupling_coefficient)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
     }
 
-    label = base_label + "/diffusion_coefficient";
-    if ( !tp.getInspectedValue(label,diffusion_coefficient)){
-      cout << label << " is not set" << endl;
-      exit(0);
-    }
+    if(material_judge=="V"){
+        base_label = "/Vessel";
+        label = base_label + "/dt";
+        if ( !tp.getInspectedValue(label,dt)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
 
-    label = base_label + "/time_step";
-    if ( !tp.getInspectedValue(label,time)){
-      cout << label << " is not set" << endl;
-      exit(0);
-    }
+        label = base_label + "/diffusion_coefficient";
+        if ( !tp.getInspectedValue(label,diffusion_coefficient)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
 
-    label = base_label + "/output_interval";
-    if ( !tp.getInspectedValue(label,output_interval)){
-      cout << label << " is not set" << endl;
-      exit(0);
-    }
-    label = base_label + "/outputDir";
-    if ( !tp.getInspectedValue(label,outputDir)){
-      cout << label << " is not set" << endl;
-      exit(0);
+        label = base_label + "/time_step";
+        if ( !tp.getInspectedValue(label,time)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/output_interval";
+        if ( !tp.getInspectedValue(label,output_interval)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/outputDir";
+        if ( !tp.getInspectedValue(label,outputDir)){
+          cout << label << " is not set" << endl;
+          exit(0);
+        }
+        label = base_label + "/boundary_file";
+        if ( !tp.getInspectedValue(label,boundary_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
+        label = base_label + "/couplint_coefficient";
+        if ( !tp.getInspectedValue(label,coupling_coefficient)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
     }
 
     mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
@@ -363,33 +449,54 @@ void twodimensinal_diffusion::boundary_setting()
 }
 
 
-void twodimensinal_diffusion::time_step()
+void twodimensinal_diffusion::time_step(vector<double> diff)
 {
-    boundary_setting();
-
-    for(int ic=0; ic<time; ic++){
-        cout << ic << endl;
-        vector<double> DC(node.size(),0.0);
-        for(int i=0; i<node.size(); i++){
-            for(int j=0; j<node.size(); j++){
-                DC[i] += D[i][j] * C[j];
-            }
-        }
-        
-        vector<double> MDC(node.size(),0.0);
-        for(int i=0; i<node.size(); i++){
-            MDC[i] = 1.0/mass_centralization[i]*DC[i];
-        }
-        
-        for(int i=0; i<node.size(); i++){
-            C[i] = C[i] - dt * MDC[i];
-        } 
-        
-        boundary_setting();
-        
-        if(ic%output_interval==0){
-            string filename = outputDir + "/test_" + to_string(ic/output_interval) + ".vtu";
-            export_vtu(filename);
+    vector<double> R(numOfNode);
+    vector<double> DC(numOfNode,0.0);
+    vector<double> DcR(numOfNode, 0.0);
+    vector<double> MDcR(numOfNode, 0.0);
+    for(int i=0; i<node.size(); i++){
+        for(int j=0; j<node.size(); j++){
+            DC[i] += D[i][j] * C[j];
         }
     }
+
+    for(int i=0; i<numOfNode; i++){
+        R[i] = mass_centralization[i]*diff[i];
+        //if(material_judge=="S") cout << R[i] << endl;
+        DcR[i] = DC[i]-R[i];
+    }
+
+    
+    vector<double> MDC(node.size(),0.0);
+    for(int i=0; i<node.size(); i++){
+        MDcR[i] = 1.0/mass_centralization[i]*DcR[i];
+    }
+    
+    for(int i=0; i<node.size(); i++){
+        C[i] = C[i] - dt * MDcR[i];
+    } 
+    
+    if(material_judge=="V") boundary_setting();
+}
+
+void twodimensinal_diffusion::dump(int ic)
+{
+    if(material_judge=="S"){
+        string filename = outputDir + "/solid_" + to_string(ic) + ".vtu";
+        export_vtu(filename);
+    }
+    if(material_judge=="F"){
+        string filename = outputDir + "/fluid_" + to_string(ic) + ".vtu";
+        export_vtu(filename);
+    }
+    if(material_judge=="V"){
+        string filename = outputDir + "/vessel_" + to_string(ic) + ".vtu";
+        export_vtu(filename);
+    }
+}
+
+double twodimensinal_diffusion::access_c(int ic)
+{
+    return C[ic];
 }
