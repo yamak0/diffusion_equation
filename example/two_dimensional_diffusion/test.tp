@@ -14,6 +14,7 @@ Fluid
   outputDir = "fluid"
   boundary_file = "boundary_fluid.dat"
   couplint_coefficient = 0.1
+  phi_file = "fluid_sdf.dat"
 }
 
 Solid
@@ -25,6 +26,7 @@ Solid
   outputDir = "solid"
   boundary_file = "boundary_solid.dat"
   couplint_coefficient = 0.1
+  phi_file = "solid_sdf.dat"
 }
 
 Vessel
@@ -36,4 +38,5 @@ Vessel
   outputDir = "vessel"
   boundary_file = "boundary_vessel.dat"
   couplint_coefficient = 0.1
+  phi_file = "vessel_sdf.dat"
 }

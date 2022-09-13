@@ -71,6 +71,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
+        label = base_label + "/phi_file";
+        if ( !tp.getInspectedValue(label,phi_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
     }
     if(material_judge=="S"){
         base_label = "/Solid";
@@ -108,6 +113,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
         }
         label = base_label + "/couplint_coefficient";
         if ( !tp.getInspectedValue(label,coupling_coefficient)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
+        label = base_label + "/phi_file";
+        if ( !tp.getInspectedValue(label,phi_file)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -152,12 +162,17 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
+        label = base_label + "/phi_file";
+        if ( !tp.getInspectedValue(label,phi_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
     }
 
     mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
 
     read_geometry();
-    boundary_initialize();
+    if(material_judge=="V") boundary_initialize();
     export_vtu("test.vtu");
 }
 
@@ -167,6 +182,7 @@ int twodimensinal_diffusion::CountNumbersOfTextLines(string &filePath )
   ifstream ifs( filePath );
   if(!ifs){
     cout << "can't file open!" << endl;
+    cout << filePath << endl;
     exit(1);
   }
   if( ifs ){
@@ -220,6 +236,18 @@ void twodimensinal_diffusion::read_geometry()
     }
     ifs.close();
 }
+
+void twodimensinal_diffusion::input_phi()
+{
+  string str,tmp;
+  ifstream ifs(phi_file);
+  phi.resize(numOfNode);
+  for(int i=0; i<numOfNode; i++){
+    getline(ifs,str);
+    phi[i] = stod(str);
+  }
+}
+
 
 void twodimensinal_diffusion::boundary_initialize()
 {
@@ -457,13 +485,12 @@ void twodimensinal_diffusion::time_step(vector<double> diff)
     vector<double> MDcR(numOfNode, 0.0);
     for(int i=0; i<node.size(); i++){
         for(int j=0; j<node.size(); j++){
-            DC[i] += D[i][j] * C[j];
+            DC[i] += D[i][j] * (phi[i]*C[j]);
         }
     }
 
     for(int i=0; i<numOfNode; i++){
         R[i] = mass_centralization[i]*diff[i];
-        //if(material_judge=="S") cout << R[i] << endl;
         DcR[i] = DC[i]-R[i];
     }
 
