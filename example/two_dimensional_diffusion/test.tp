@@ -1,0 +1,16 @@
+Geometry
+{
+  node_file = "node.dat"
+  element_file = "element.dat"
+  boundary_file = "boundary.dat"
+  gauss_setting = "square"
+}
+
+calc_settings
+{
+  dt = 0.0001
+  time_step = 100000
+  output_interval = 1000
+  diffusion_coefficient = 0.5
+  outputDir = "test"
+}

@@ -2,6 +2,7 @@ add_library(Base STATIC)
 target_sources(Base
   PRIVATE
     matrix.cpp
+    two_dimensional.cpp
 )
 
 target_include_directories(Base PUBLIC 
