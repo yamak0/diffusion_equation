@@ -1,8 +1,3 @@
-#include<iostream>
-#include<vector>
-#include<fstream>
-#include<string>
-#include<cmath>
 #include"two_diffusion.hpp"
 #include"shapefunction.hpp"
 using namespace std;
@@ -51,59 +46,6 @@ void set_field(vector<vector<double>> &node, vector<vector<int>> &element, int n
       }
     }
     ofs.close();
-}
-
-static void C2D4_N(std::vector<double> &N,const double &g1,const double &g2)
-{
-  N[0] = 2.5e-1 * (1e+0-g1) * (1e+0-g2);
-  N[1] = 2.5e-1 * (1e+0+g1) * (1e+0-g2);
-  N[2] = 2.5e-1 * (1e+0+g1) * (1e+0+g2);
-  N[3] = 2.5e-1 * (1e+0-g1) * (1e+0+g2);
-}
-
-static void C2D4_dNdr(std::vector<std::vector<double>> &dNdr,const double &g1,const double &g2)
-{
-  dNdr[0][0] = -2.5e-1 * (1e+0-g2);
-  dNdr[0][1] = -2.5e-1 * (1e+0-g1);
-  dNdr[1][0] =  2.5e-1 * (1e+0-g2);
-  dNdr[1][1] = -2.5e-1 * (1e+0+g1);
-  dNdr[2][0] =  2.5e-1 * (1e+0+g2);
-  dNdr[2][1] =  2.5e-1 * (1e+0+g1);
-  dNdr[3][0] = -2.5e-1 * (1e+0+g2);
-  dNdr[3][1] =  2.5e-1 * (1e+0-g1);
-}
-
-void calc_dxdr(int ic, vector<vector<double>> node, vector<vector<int>> element, vector<vector<double>> &dxdr, vector<vector<double>> dNdr)
-{
-  for(int k=0;k<2;k++){
-    for(int l=0;l<2;l++){
-      dxdr[k][l] = 0e0;
-      for(int p=0;p<4;p++){
-        dxdr[k][l] += dNdr[p][l] * node[element[ic][p]][k];
-      }
-    }
-  }
-}
-
-void calc_inverse_matrix_2x2(vector<vector<double>> dxdr, vector<vector<double>> &drdx)
-{
-  double det = dxdr[0][0]*dxdr[1][1]-dxdr[0][1]*dxdr[1][0];
-  drdx[0][0] = 1.0/det*dxdr[1][1];
-  drdx[1][1] = 1.0/det*dxdr[0][0];
-  drdx[0][1] = -1.0/det*dxdr[1][0];
-  drdx[1][0] = -1.0/det*dxdr[0][1];
-}
-
-void calc_dNdx(vector<vector<double>> &dNdx, vector<vector<double>> dNdr, vector<vector<double>> drdx)
-{
-  for(int k=0; k<4; k++){
-    for(int l=0; l<2; l++){
-      dNdx[k][l] = 0.0;
-      for(int p=0; p<2; p++){
-        dNdx[k][l] += dNdr[k][p]*drdx[p][l];
-      }
-    }
-  }
 }
 
 int main(int argc,char *argv[])
