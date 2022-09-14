@@ -7,9 +7,9 @@ Geometry
 
 Fluid
 {
-  dt = 0.0001
+  dt = 0.001
   time_step = 100000
-  output_interval = 1000
+  output_interval = 100
   diffusion_coefficient = 0.5
   outputDir = "fluid"
   boundary_file = "boundary_fluid.dat"
@@ -19,9 +19,9 @@ Fluid
 
 Solid
 {
-  dt = 0.0001
+  dt = 0.001
   time_step = 100000
-  output_interval = 1000
+  output_interval = 100
   diffusion_coefficient = 0.5
   outputDir = "solid"
   boundary_file = "boundary_solid.dat"
@@ -31,10 +31,10 @@ Solid
 
 Vessel
 {
-  dt = 0.0001
+  dt = 0.001
   time_step = 100000
-  output_interval = 1000
-  diffusion_coefficient = 0.5
+  output_interval = 100
+  diffusion_coefficient = 2.0
   outputDir = "vessel"
   boundary_file = "boundary_vessel.dat"
   couplint_coefficient = 0.1

@@ -60,7 +60,7 @@ int main()
         if(read_sdf[i]<-3.0){
             point_sdf_fluid.push_back(0.0);
             point_sdf_solid.push_back(0.0);
-            point_sdf_vessel.push_back(1.0);
+            point_sdf_vessel.push_back(0.0);
             continue;
         }
         if(read_sdf[i]<0.0){
@@ -74,6 +74,13 @@ int main()
             point_sdf_vessel.push_back(0.05);
         }
     }
+
+    for(int i=0; i<choroid_point_id.size(); i++){
+        point_sdf_fluid[choroid_point_id[i]] = 0.2;
+        point_sdf_solid[choroid_point_id[i]] = 0.0;
+        point_sdf_vessel[choroid_point_id[i]] = 0.8;
+    }
+
     ofstream ofs("fluid_sdf.dat");
     for(int i=0; i<point_sdf_fluid.size(); i++){
         ofs << point_sdf_fluid[i] << endl;
@@ -94,7 +101,9 @@ int main()
 
     ofs.open("boundary_vessel.dat");
     for(int i=0; i<choroid_point_id.size(); i++){
-        ofs << choroid_point_id[i] << endl;
+        ofs << choroid_point_id[i] << " " << 1.0 << endl;
     }
     ofs.close();
+
+
 }

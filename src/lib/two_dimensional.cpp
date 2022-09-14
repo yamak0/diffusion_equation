@@ -170,8 +170,9 @@ void twodimensinal_diffusion::input_info(std::string input_file)
     }
 
     mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
-
+ 
     read_geometry();
+    input_phi();
     if(material_judge=="V") boundary_initialize();
     export_vtu("test.vtu");
 }
@@ -485,7 +486,7 @@ void twodimensinal_diffusion::time_step(vector<double> diff)
     vector<double> MDcR(numOfNode, 0.0);
     for(int i=0; i<node.size(); i++){
         for(int j=0; j<node.size(); j++){
-            DC[i] += D[i][j] * (phi[i]*C[j]);
+            DC[i] += D[i][j] * C[j];
         }
     }
 
