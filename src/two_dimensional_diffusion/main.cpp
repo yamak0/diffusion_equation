@@ -160,7 +160,7 @@ int main(int argc,char *argv[])
       }
       string dir = "out_C";
       mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
-      string filename = dir + "/test_" + to_string(i/Vessel.output_interval) + ".dat";
+      string filename = dir + "/test_" + to_string(i/Vessel.output_interval) + ".vtu";
       export_vtu(filename,Fluid.element,Fluid.node,C_sum);
     }
   }

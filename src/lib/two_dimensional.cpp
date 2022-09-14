@@ -486,7 +486,7 @@ void twodimensinal_diffusion::time_step(vector<double> diff)
     vector<double> MDcR(numOfNode, 0.0);
     for(int i=0; i<node.size(); i++){
         for(int j=0; j<node.size(); j++){
-            DC[i] += D[i][j] * C[j];
+            DC[i] += D[i][j] * (phi[j]*C[j]);
         }
     }
 
