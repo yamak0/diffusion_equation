@@ -8,6 +8,7 @@
 #include<sstream>
 #include<fstream>
 #include<iostream>
+#include<omp.h>
 
 class twodimensinal_diffusion{
     private:
@@ -16,7 +17,7 @@ class twodimensinal_diffusion{
         int numOfElm, numOfBoundaryNode;
         std::string material_judge;
         std::string gauss_setting, outputDir;
-        std::string node_file, element_file, boundary_file, phi_file;
+        std::string node_file, element_file, boundary_file, phi_file, phi_visualize_file;
         std::vector<double> C;
         std::vector<std::vector<double>> D;
         std::vector<double> mass_centralization;
@@ -26,7 +27,9 @@ class twodimensinal_diffusion{
     public:
         int time, output_interval, numOfNode;
         double coupling_coefficient;
-        std::vector<double> phi;
+        double coupling_coefficient_v;
+        double coupling_coefficient_s;
+        std::vector<double> phi, phi_v;
         std::vector<std::vector<double>> node;
         std::vector<std::vector<int>> element;
         TextParser tp;

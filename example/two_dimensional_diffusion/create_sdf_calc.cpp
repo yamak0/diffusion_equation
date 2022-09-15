@@ -63,16 +63,21 @@ int main()
             point_sdf_vessel.push_back(0.0);
             continue;
         }
-        if(read_sdf[i]<0.0){
-            point_sdf_solid.push_back(0.95);
-            point_sdf_fluid.push_back(0.0);
-            point_sdf_vessel.push_back(0.05);
-        }
         else{
-            point_sdf_solid.push_back(1.0-(read_sdf[i]));
-            point_sdf_fluid.push_back(read_sdf[i]-0.05);
-            point_sdf_vessel.push_back(0.05);
+            point_sdf_solid.push_back(1.0);
+            point_sdf_fluid.push_back(1.0);
+            point_sdf_vessel.push_back(1.0);
         }
+        //if(read_sdf[i]<0.0){
+        //    point_sdf_solid.push_back(0.99);
+        //    point_sdf_fluid.push_back(0.0);
+        //    point_sdf_vessel.push_back(0.01);
+        //}
+        //else{
+        //    point_sdf_solid.push_back(1.0-(read_sdf[i]));
+        //    point_sdf_fluid.push_back(read_sdf[i]-0.05);
+        //    point_sdf_vessel.push_back(0.05);
+        //}
     }
 
     for(int i=0; i<choroid_point_id.size(); i++){

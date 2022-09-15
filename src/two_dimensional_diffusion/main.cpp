@@ -97,7 +97,6 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
   fprintf(fp, "</VTKFile>\n");
   fclose(fp);
 }
-
 int main(int argc,char *argv[])
 {
   //input argument
@@ -127,22 +126,22 @@ int main(int argc,char *argv[])
 
   Vessel.boundary_setting();
   C_sum.resize(Fluid.numOfNode);
-
+  int j,ic;
   for(int i=0; i<Fluid.time; i++){
     cout << i << endl;
-    vector<double> fluid_vessel_diff(Fluid.numOfNode), vessel_fluid_diff(Fluid.numOfNode); 
+    vector<double> fluid_vessel_diff(Fluid.numOfNode,0.0), vessel_fluid_diff(Fluid.numOfNode); 
     vector<double> fluid_solid_diff(Solid.numOfNode), solid_fluid_diff(Solid.numOfNode); 
     vector<double> fluid_source(Fluid.numOfNode);
-    
-    for(int j=0; j<Fluid.numOfNode; j++){
-      fluid_vessel_diff[j]=-Vessel.coupling_coefficient*(Vessel.phi[j]*Vessel.access_c(j)-Fluid.phi[j]*Fluid.access_c(j));
-      vessel_fluid_diff[j]=-Fluid.coupling_coefficient*(Fluid.phi[j]*Fluid.access_c(j)-Vessel.phi[j]*Vessel.access_c(j));
+    #pragma omp parallel for
+    for(j=0; j<Fluid.numOfNode; j++){
+      //fluid_vessel_diff[j]=-Vessel.coupling_coefficient*(Vessel.phi[j]*Vessel.access_c(j)-Fluid.phi[j]*Fluid.access_c(j));
+      vessel_fluid_diff[j]=-Fluid.coupling_coefficient_v*(Fluid.phi[j]*Fluid.access_c(j)-Vessel.phi[j]*Vessel.access_c(j));
       fluid_solid_diff[j]=-Solid.coupling_coefficient*(Solid.phi[j]*Solid.access_c(j)-Fluid.phi[j]*Fluid.access_c(j));
-      solid_fluid_diff[j]=-Fluid.coupling_coefficient*(Fluid.phi[j]*Fluid.access_c(j)-Solid.phi[j]*Solid.access_c(j));
-      fluid_source[j] = vessel_fluid_diff[j] + solid_fluid_diff[j]; 
+      solid_fluid_diff[j]=-Fluid.coupling_coefficient_s*(Fluid.phi[j]*Fluid.access_c(j)-Solid.phi[j]*Solid.access_c(j));
+      //fluid_source[j] = vessel_fluid_diff[j] + solid_fluid_diff[j]; 
     }
     Vessel.time_step(fluid_vessel_diff);
-    Fluid.time_step(fluid_source);
+    Fluid.time_step(vessel_fluid_diff);
     Solid.time_step(fluid_solid_diff);
 
     if(i%Fluid.output_interval==0){
@@ -155,8 +154,9 @@ int main(int argc,char *argv[])
       Vessel.dump(i/Vessel.output_interval);
     }
     if(i%Vessel.output_interval==0){
-      for(int ic=0; ic<C_sum.size(); ic++){
-        C_sum[ic] = Fluid.phi[ic]*Fluid.access_c(ic)+Solid.phi[ic]*Solid.access_c(ic)+Vessel.phi[ic]*Vessel.access_c(ic);
+      #pragma omp parallel for
+      for(ic=0; ic<C_sum.size(); ic++){
+        C_sum[ic] = Fluid.phi_v[ic]*Fluid.access_c(ic)+Solid.phi_v[ic]*Solid.access_c(ic)+Vessel.phi_v[ic]*Vessel.access_c(ic);
       }
       string dir = "out_C";
       mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);

@@ -7,6 +7,7 @@
 #include<string>
 #include <sys/stat.h>
 #include "TextParser.h"
+#include<omp.h>
 
 class onedimensinal_diffusion{
     private:
