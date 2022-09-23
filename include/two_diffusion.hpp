@@ -17,11 +17,10 @@ class twodimensinal_diffusion{
         int numOfElm, numOfBoundaryNode;
         std::string material_judge;
         std::string gauss_setting, outputDir;
-        std::string node_file, element_file, boundary_file, phi_file, phi_visualize_file;
+        std::string node_file, element_file, boundary_file, phi_file, phi_visualize_file, node_phi_file;
         std::vector<double> C;
         std::vector<std::vector<double>> D;
         std::vector<double> mass_centralization;
-        std::vector<int> boundary_node;
         std::vector<double> boundary_value;
         std::vector<std::vector<double>> gauss;
     public:
@@ -29,7 +28,8 @@ class twodimensinal_diffusion{
         double coupling_coefficient;
         double coupling_coefficient_v;
         double coupling_coefficient_s;
-        std::vector<double> phi, phi_v;
+        std::vector<int> boundary_node;
+        std::vector<double> phi, phi_v, phi_node;
         std::vector<std::vector<double>> node;
         std::vector<std::vector<int>> element;
         TextParser tp;

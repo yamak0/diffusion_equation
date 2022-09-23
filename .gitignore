@@ -2,6 +2,9 @@ Main
 build
 *.json
 *png
-*.dat
 *.mp4
 *.vtu
+solid
+fluid
+out_C
+test

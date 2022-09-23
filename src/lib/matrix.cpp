@@ -147,10 +147,10 @@ void onedimensinal_diffusion::calc_mass_matrix()
 void onedimensinal_diffusion::calc_K_matrix()
 {
     for(int i=0; i<element.size(); i++){
-        K[element[i][0]][element[i][0]] += diffusion_coefficient*1.0/element_length;
-        K[element[i][0]][element[i][1]] += -diffusion_coefficient*1.0/element_length;
-        K[element[i][1]][element[i][0]] += -diffusion_coefficient*1.0/element_length;
-        K[element[i][1]][element[i][1]] += diffusion_coefficient*1.0/element_length;
+        K[element[i][0]][element[i][0]] += diffusion_coefficient*1.0/element_length*element_phi[i];
+        K[element[i][0]][element[i][1]] += -diffusion_coefficient*1.0/element_length*element_phi[i];
+        K[element[i][1]][element[i][0]] += -diffusion_coefficient*1.0/element_length*element_phi[i];
+        K[element[i][1]][element[i][1]] += diffusion_coefficient*1.0/element_length*element_phi[i];
     }
 }
 

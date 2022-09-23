@@ -46,7 +46,8 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
   fprintf(fp, "</Cells>\n");
 
   fprintf(fp, "<PointData>\n");
-
+  //fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
+  //offset += sizeof(int) + sizeof(double) * node.size();
  
   fprintf(fp, "</PointData>\n");
 
@@ -79,6 +80,15 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
   ofs.write((char *)&size, sizeof(size));
   ofs.write((char *)data_d, size);
 
+  //num=0;
+  //for (int ic = 0; ic < node.size(); ic++){
+  //    data_d[num]   = sdf[ic];
+  //    num++;
+  //}
+  //size=sizeof(double)*node.size();
+  //ofs.write((char *)&size, sizeof(size));
+  //ofs.write((char *)data_d, size);
+
   num=0;
   for (int ic = 0; ic < element.size(); ic++){
       data_d[num]   = sdf[ic];
@@ -87,6 +97,7 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
   size=sizeof(double)*element.size();
   ofs.write((char *)&size, sizeof(size));
   ofs.write((char *)data_d, size);
+
 
   delete data_d;
 
@@ -149,53 +160,68 @@ int main()
     }
 
     vector<vector<int>> element;
-    for(int i=0; i<126; i++){
-        for(int j=0; j<126; j++){
+    for(int i=0; i<127; i++){
+        for(int j=0; j<127; j++){
             vector<int> tmp_element;
-            tmp_element.push_back(i*127+j);
-            tmp_element.push_back(i*127+j+1);
-            tmp_element.push_back((i+1)*127+j+1);
-            tmp_element.push_back((i+1)*127+j);
+            tmp_element.push_back(i*128+j);
+            tmp_element.push_back((i+1)*128+j);
+            tmp_element.push_back((i+1)*128+j+1);
+            tmp_element.push_back(i*128+j+1);
+            
             element.push_back(tmp_element);
             for(int k=0; k<tmp_element.size(); k++){
                 cout << tmp_element[k] << " ";
             }
+            //if(j==10) exit(1);
             cout << endl;
         }
     }
 
-    ifs.open("sdf_test.csv");
-    string sdf_file = "sdf_test.csv";
+    ifs.open("O17_cell_value.csv");
+    string sdf_file = "O17_cell_value.csv";
     int sdf_line = CountNumbersOfTextLines(sdf_file);
+    cout << sdf_line << endl;
     vector<double> cell_sdf;
     for(int i=0; i<sdf_line; i++){
         getline(ifs,str);
         if(i==0) continue;
         cell_sdf.push_back(stod(str));
     }
-    double minimum = 10000;
     for(int i=0; i<cell_sdf.size(); i++){
-        if(cell_sdf[i]<minimum){
-            minimum=cell_sdf[i];
-        }
-    }
-
-    for(int i=0; i<cell_sdf.size(); i++){
-        cell_sdf[i] += fabs(minimum);
-        if(cell_sdf[i]>32) cell_sdf[i] = -100;
+      if(cell_sdf[i]<0.0) cell_sdf[i] = 0.0;
     }
 
     double muximum = 0.0;
-
     for(int i=0; i<cell_sdf.size(); i++){
-        if(cell_sdf[i]>muximum){
-            muximum = cell_sdf[i];
-        }
+      muximum = max(muximum, cell_sdf[i]);
     }
 
     for(int i=0; i<cell_sdf.size(); i++){
-        cell_sdf[i] = cell_sdf[i] /muximum;
+      cell_sdf[i] = cell_sdf[i] / muximum;
     }
+    //double minimum = 10000;
+    //for(int i=0; i<cell_sdf.size(); i++){
+    //    if(cell_sdf[i]<minimum){
+    //        minimum=cell_sdf[i];
+    //    }
+    //}
+
+    //for(int i=0; i<cell_sdf.size(); i++){
+    //    cell_sdf[i] += fabs(minimum);
+    //    if(cell_sdf[i]>32) cell_sdf[i] = -100;
+    //}
+
+    //double muximum = 0.0;
+
+    //for(int i=0; i<cell_sdf.size(); i++){
+    //    if(cell_sdf[i]>muximum){
+    //        muximum = cell_sdf[i];
+    //    }
+    //}
+
+    //for(int i=0; i<cell_sdf.size(); i++){
+    //    cell_sdf[i] = cell_sdf[i] /muximum;
+    //}
     ofstream ofs("node.dat");
     for(int i=0; i<x.size(); i++){
       ofs << x[i][0] << " " << x[i][1] << " " << x[i][2] << endl;
@@ -210,6 +236,37 @@ int main()
       ofs << endl;
     }
     ofs.close();
-    
-    export_vtu("test.vtu",element,x,cell_sdf);
+
+    ofs.open("vessel_phi.dat");
+    for(int i=0; i<cell_sdf.size(); i++){
+      ofs << cell_sdf[i] << endl;
+    }
+    ofs.close();
+
+    string solid_node_file ="solid_phi_node.csv";
+    ifs.open("solid_phi_node.csv");
+    vector<int> solid_phi_node;
+    int solid_node_line = CountNumbersOfTextLines(solid_node_file);
+    for(int i=0; i<solid_node_line; i++){
+      getline(ifs,str);
+      if(i==0) continue;
+      solid_phi_node.push_back(stoi(str));
+    }
+    ifs.close();
+    vector<double> solid_phi(cell_sdf.size());
+    for(int i=0; i<cell_sdf.size(); i++){
+      solid_phi[i] = 1.0-cell_sdf[i];
+      if(fabs(solid_phi[i]-1.0)<0.001) solid_phi[i] = 0.0;
+    }
+    for(int i=0; i<solid_phi_node.size(); i++){
+      solid_phi[solid_phi_node[i]] = 1.0;
+    }
+
+    ofs.open("ISF_phi.dat");
+    for(int i=0; i<cell_sdf.size(); i++){
+      ofs << solid_phi[i] << endl;
+    }
+    ofs.close();
+
+    export_vtu("17_cell_test.vtu",element,x,solid_phi);
 }

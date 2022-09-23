@@ -67,18 +67,26 @@ void twodimensinal_diffusion::input_phi()
 {
   string str,tmp;
   ifstream ifs(phi_file);
-  phi.resize(numOfNode);
-  for(int i=0; i<numOfNode; i++){
+  phi.resize(numOfElm);
+  for(int i=0; i<numOfElm; i++){
     getline(ifs,str);
     phi[i] = stod(str);
   }
   ifs.close();
 
   ifs.open(phi_visualize_file);
-  phi_v.resize(numOfNode);
-  for(int i=0; i<numOfNode; i++){
+  phi_v.resize(numOfElm);
+  for(int i=0; i<numOfElm; i++){
     getline(ifs,str);
     phi_v[i] = stod(str);
+  }
+  ifs.close();
+
+  ifs.open(node_phi_file);
+  phi_node.resize(numOfNode);
+  for(int i=0; i<numOfNode; i++){
+    getline(ifs,str);
+    phi_node[i] = stod(str);
   }
   ifs.close();
 }
@@ -162,6 +170,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
+        label = base_label + "/node_phi_file";
+        if ( !tp.getInspectedValue(label,node_phi_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
         label = base_label + "/phi_visualize_file";
         if ( !tp.getInspectedValue(label,phi_visualize_file)){
             cout << label << " is not set" << endl;
@@ -209,6 +222,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
         }
         label = base_label + "/phi_file";
         if ( !tp.getInspectedValue(label,phi_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
+        label = base_label + "/node_phi_file";
+        if ( !tp.getInspectedValue(label,node_phi_file)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -263,6 +281,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
+        label = base_label + "/node_phi_file";
+        if ( !tp.getInspectedValue(label,node_phi_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
         label = base_label + "/phi_visualize_file";
         if ( !tp.getInspectedValue(label,phi_visualize_file)){
             cout << label << " is not set" << endl;
@@ -271,9 +294,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
     }
 
     mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
- 
+    cout << "Read geometry" << endl;
     read_geometry();
+    cout << "Read phi" << endl;
     input_phi();
+    cout << "boundary initialize" << endl;
     if(material_judge=="V") boundary_initialize();
     export_vtu("test.vtu");
 }

@@ -30,6 +30,7 @@ class onedimensinal_diffusion{
         std::vector<double> i_b_n;
     public:
         TextParser tp;
+        std::vector<double> element_phi;
         void input_parameter();
         void initialize();
         void calc_mass_matrix();

@@ -44,9 +44,10 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
   fprintf(fp, "</Cells>\n");
 
   fprintf(fp, "<PointData>\n");
-
   fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
-  offset += sizeof(int) + sizeof(double) * node.size();
+  offset += sizeof(int) + sizeof(double) * element.size();
+
+  
 
   fprintf(fp, "</PointData>\n");
 
@@ -105,42 +106,55 @@ int main(int argc,char *argv[])
     return 1;
   }
   std::string input_file = argv[1];
-  twodimensinal_diffusion Fluid("F"), Solid("S"), Vessel("V");
+  twodimensinal_diffusion Solid("S"), Vessel("V"), Fluid("F");
   vector<double> C_sum;
-
+  cout << "input infomation" << endl;
   Fluid.input_info(input_file);
   Solid.input_info(input_file);
   Vessel.input_info(input_file);
 
+  cout << "gauss_point_setting" << endl;
   Fluid.gauss_point_setting();
   Solid.gauss_point_setting();
   Vessel.gauss_point_setting();
 
   Fluid.matrix_initialize();
+  cout << "matrix initialize" << endl;
   Solid.matrix_initialize();
   Vessel.matrix_initialize();
 
   Fluid.calc_matrix();
+  cout << "calc matrix" << endl;
   Solid.calc_matrix();
-  Vessel.calc_matrix();
-
+  //Vessel.calc_matrix();
+  cout << "set boundary" << endl;
   Vessel.boundary_setting();
-  C_sum.resize(Fluid.numOfNode);
+  C_sum.resize(Vessel.numOfNode);
   int j,ic;
-  for(int i=0; i<Fluid.time; i++){
+
+  for(int i=0; i<Vessel.boundary_node.size(); i++){
+    Vessel.phi_node[Vessel.boundary_node[i]]=0.7;
+    Fluid.phi_node[Vessel.boundary_node[i]]=0.2;
+    Solid.phi_node[Vessel.boundary_node[i]]=0.1;
+  }
+  
+  //export_vtu("sdf_test_v.vtu",Vessel.element,Vessel.node,element_C);
+  //exit(1);
+  cout << "main loop" << endl;
+  for(int i=0; i<Vessel.time; i++){
     cout << i << endl;
-    vector<double> fluid_vessel_diff(Fluid.numOfNode,0.0), vessel_fluid_diff(Fluid.numOfNode); 
-    vector<double> fluid_solid_diff(Solid.numOfNode), solid_fluid_diff(Solid.numOfNode); 
-    vector<double> fluid_source(Fluid.numOfNode);
-    #pragma omp parallel for
-    for(j=0; j<Fluid.numOfNode; j++){
-      //fluid_vessel_diff[j]=-Vessel.coupling_coefficient*(Vessel.phi[j]*Vessel.access_c(j)-Fluid.phi[j]*Fluid.access_c(j));
-      vessel_fluid_diff[j]=-Fluid.coupling_coefficient_v*(Fluid.phi[j]*Fluid.access_c(j)-Vessel.phi[j]*Vessel.access_c(j));
-      fluid_solid_diff[j]=-Solid.coupling_coefficient*(Solid.phi[j]*Solid.access_c(j)-Fluid.phi[j]*Fluid.access_c(j));
-      solid_fluid_diff[j]=-Fluid.coupling_coefficient_s*(Fluid.phi[j]*Fluid.access_c(j)-Solid.phi[j]*Solid.access_c(j));
+    vector<double> fluid_vessel_diff(Vessel.numOfNode,0.0), vessel_fluid_diff(Vessel.numOfNode); 
+    vector<double> fluid_solid_diff(Solid.numOfNode), solid_fluid_diff(Solid.numOfNode,0.0); 
+    //vector<double> fluid_source(Fluid.numOfNode);
+    //#pragma omp parallel for
+    for(j=0; j<Vessel.numOfNode; j++){
+      //fluid_vessel_diff[j]=-Vessel.coupling_coefficient*(Vessel.phi_node[j]*Vessel.access_c(j)-Fluid.phi_node[j]*Solid.access_c(j));
+      vessel_fluid_diff[j]=-Fluid.coupling_coefficient_v*Fluid.phi_node[j]*(Fluid.access_c(j)-Vessel.access_c(j));
+      fluid_solid_diff[j]=-Solid.coupling_coefficient*Solid.phi_node[j]*(Solid.access_c(j)-Fluid.access_c(j));
+      //solid_fluid_diff[j]=-Fluid.coupling_coefficient_s*(Fluid.phi[j]*Fluid.access_c(j)-Solid.phi[j]*Solid.access_c(j));
       //fluid_source[j] = vessel_fluid_diff[j] + solid_fluid_diff[j]; 
     }
-    Vessel.time_step(fluid_vessel_diff);
+    //Vessel.time_step(fluid_vessel_diff);
     Fluid.time_step(vessel_fluid_diff);
     Solid.time_step(fluid_solid_diff);
 
@@ -154,14 +168,14 @@ int main(int argc,char *argv[])
       Vessel.dump(i/Vessel.output_interval);
     }
     if(i%Vessel.output_interval==0){
-      #pragma omp parallel for
+    //  #pragma omp parallel for
       for(ic=0; ic<C_sum.size(); ic++){
-        C_sum[ic] = Fluid.phi_v[ic]*Fluid.access_c(ic)+Solid.phi_v[ic]*Solid.access_c(ic)+Vessel.phi_v[ic]*Vessel.access_c(ic);
+        C_sum[ic] = Solid.phi_node[ic]*Solid.access_c(ic)+Fluid.phi_node[ic]*Fluid.access_c(ic)+Vessel.phi_node[ic]*Vessel.access_c(ic);
       }
       string dir = "out_C";
       mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
       string filename = dir + "/test_" + to_string(i/Vessel.output_interval) + ".vtu";
-      export_vtu(filename,Fluid.element,Fluid.node,C_sum);
+      export_vtu(filename,Vessel.element,Vessel.node,C_sum);
     }
   }
 }
