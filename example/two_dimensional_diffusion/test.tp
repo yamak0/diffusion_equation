@@ -8,42 +8,39 @@ Geometry
 Fluid
 {
   dt = 0.01
-  time_step = 1000000
+  time_step = 36000
   output_interval = 100
-  diffusion_coefficient = 1.0
+  diffusion_coefficient = 1e-4
   outputDir = "fluid"
   boundary_file = "boundary_fluid.dat"
-  couplint_coefficient_v = 0.4
-  couplint_coefficient_s = 0.1
-  node_phi_file = "vessel_node_phi.dat"
-  phi_file = "vessel_phi.dat"
-  phi_visualize_file = "fluid_sdf_visualize.dat"
+  couplint_coefficient_v = 1e-6
+  couplint_coefficient_s = 1e-8
+  phi_file = "fluid_phi.dat"
+  phi_node_file ="fluid_node_phi.dat"
 }
 
 Solid
 {
   dt = 0.01
-  time_step = 1000000
+  time_step = 36000
   output_interval = 100
-  diffusion_coefficient = 0.1
+  diffusion_coefficient = 1e-6
   outputDir = "solid"
   boundary_file = "boundary_solid.dat"
-  couplint_coefficient = 1.0
-  phi_file = "ISF_phi.dat"
-  node_phi_file = "solid_node_phi.dat"
-  phi_visualize_file = "diffusion_coefficient.dat"
+  couplint_coefficient = 1e-8
+  phi_file = "solid_phi.dat"
+  phi_node_file ="solid_node_phi.dat"
 }
 
 Vessel
 {
   dt = 0.01
-  time_step = 1000000
+  time_step = 36000
   output_interval = 100
   diffusion_coefficient = 1
   outputDir = "vessel"
   boundary_file = "boundary_vessel.dat"
-  couplint_coefficient = 0.4
+  couplint_coefficient = 1e-6
   phi_file = "vessel_phi.dat"
-  node_phi_file = "vessel_node_phi.dat"
-  phi_visualize_file = "diffusion_coefficient.dat"
+  phi_node_file ="vessel_node_phi.dat"
 }

@@ -16,7 +16,10 @@ void twodimensinal_diffusion::boundary_initialize()
         istringstream stream(str);
         for(int j=0;j<2;j++){
             getline(stream,tmp,' ');
-            if(j==0) boundary_node[i] = stoi(tmp);
+            if(j==0){
+              boundary_node[i] = stoi(tmp);
+              boundary_node_judge.insert(stoi(tmp));
+            }
             if(j==1) boundary_value[i] = stod(tmp);
         }
     }
@@ -44,6 +47,11 @@ void twodimensinal_diffusion::matrix_initialize()
     D.resize(node.size());
     for(int i=0; i<node.size(); i++){
         D[i].resize(node.size());
+    }
+
+    mass.resize(node.size());
+    for(int i=0; i<node.size(); i++){
+        mass[i].resize(node.size());
     }
 
     mass_centralization.resize(node.size());
@@ -105,7 +113,6 @@ void twodimensinal_diffusion::calc_matrix()
       double detJ = dxdr[0][0] * dxdr[1][1]  - dxdr[1][0] * dxdr[0][1];
       vector<vector<double>> dNdx(4, vector<double>(2, 0.0));
       calc_dNdx(dNdx, dNdr, drdx);
-      
       for(k=0; k<4; k++){
         for(l=0; l<4; l++){
           for(p=0; p<2; p++){
@@ -122,34 +129,38 @@ void twodimensinal_diffusion::calc_matrix()
       
       for(k=0; k<4; k++){
         for(l=0; l<4; l++){
-          element_mass_centralization[k] += element_mass[k][l];
-        }
-      }
-      
-      for(k=0; k<4; k++){
-        for(l=0; l<4; l++){
           D[element[i][k]][element[i][l]] += diffusion_coefficient * element_D[k][l] * phi[i] * detJ;
+          mass[element[i][k]][element[i][l]] += diffusion_coefficient * element_mass[k][l] * phi[i] * detJ;
         }
-        mass_centralization[element[i][k]] += element_mass_centralization[k] * detJ;
       }
+    }
+  }
+
+  for(i=0; i<mass.size(); i++){
+    mass_centralization[i]=0.0;
+    for(j=0; j<mass[i].size(); j++){
+      mass_centralization[i] += mass[i][j];
     }
   }
 }
 
-void twodimensinal_diffusion::boundary_setting()
+void twodimensinal_diffusion::boundary_setting(double time_t)
 {
-  for(int i=0; i<numOfBoundaryNode; i++){
-    C[boundary_node[i]] = boundary_value[i]*phi_node[boundary_node[i]];
+  if(material_judge=="F" || material_judge== "S"){
+    for(int i=0; i<numOfBoundaryNode; i++){
+      C[boundary_node[i]] = boundary_value[i];
+    }
   }
-  phi_node.resize(numOfNode);
-  for(int i=0; i<boundary_node.size(); i++){
-    phi_node[boundary_node[i]] = 1.0;
+  else{
+    for(int i=0; i<numOfBoundaryNode; i++){
+      if(time_t<=60.0) C[boundary_node[i]] = (boundary_value[i]/60.0)*time_t;
+      if(time_t>60.0) C[boundary_node[i]] = boundary_value[i];
+    }
   }
 }
 
-void twodimensinal_diffusion::time_step(vector<double> diff)
+void twodimensinal_diffusion::time_step(vector<double> R, double time_t)
 {
-  vector<double> R(numOfNode);
   vector<double> DC(numOfNode,0.0);
   vector<double> DcR(numOfNode,0.0);
   vector<double> MDcR(numOfNode,0.0);
@@ -158,19 +169,21 @@ void twodimensinal_diffusion::time_step(vector<double> diff)
   int i,j;
   #pragma omp parallel for private(j)
   for(i=0; i<numOfNode; i++){
-    for(j=0; j<node.size(); j++){
+    for(j=0; j<numOfNode; j++){
         DC[i] += D[i][j] * (C[j]);
     }
   }
+
   #pragma omp parallel for
   for(i=0; i<numOfNode; i++){
-    R[i] = mass_centralization[i]*diff[i];
     DcR[i] = DC[i]-R[i];
-    MDcR[i] = 1.0/mass_centralization[i]*DcR[i];
-    C[i] = C[i] - dt * MDcR[i];
+    if(boundary_node_judge.find(i)==boundary_node_judge.end()){
+      MDcR[i] = 1.0/mass_centralization[i]*DcR[i];
+      C[i] = C[i] - dt * MDcR[i];
+      if(C[i]>1.0) C[i]=1.0;
+    }
   }  
-  
-  if(material_judge=="V") boundary_setting();
+  boundary_setting(time_t);
 }
 
 double twodimensinal_diffusion::access_c(int ic)

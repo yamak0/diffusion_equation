@@ -112,52 +112,42 @@ int main(int argc,char *argv[])
   Fluid.input_info(input_file);
   Solid.input_info(input_file);
   Vessel.input_info(input_file);
-
+  
   cout << "gauss_point_setting" << endl;
   Fluid.gauss_point_setting();
   Solid.gauss_point_setting();
   Vessel.gauss_point_setting();
 
-  Fluid.matrix_initialize();
   cout << "matrix initialize" << endl;
+  Fluid.matrix_initialize();
   Solid.matrix_initialize();
   Vessel.matrix_initialize();
 
-  Fluid.calc_matrix();
   cout << "calc matrix" << endl;
+  Fluid.calc_matrix();
   Solid.calc_matrix();
-  //Vessel.calc_matrix();
-  cout << "set boundary" << endl;
-  Vessel.boundary_setting();
-  C_sum.resize(Vessel.numOfNode);
-  int j,ic;
+  Vessel.calc_matrix();
 
-  for(int i=0; i<Vessel.boundary_node.size(); i++){
-    Vessel.phi_node[Vessel.boundary_node[i]]=0.7;
-    Fluid.phi_node[Vessel.boundary_node[i]]=0.2;
-    Solid.phi_node[Vessel.boundary_node[i]]=0.1;
-  }
-  
-  //export_vtu("sdf_test_v.vtu",Vessel.element,Vessel.node,element_C);
-  //exit(1);
+  cout << "set boundary" << endl;
+  Vessel.boundary_setting(0.0);
+  C_sum.resize(Vessel.numOfNode);
+
   cout << "main loop" << endl;
   for(int i=0; i<Vessel.time; i++){
     cout << i << endl;
-    vector<double> fluid_vessel_diff(Vessel.numOfNode,0.0), vessel_fluid_diff(Vessel.numOfNode); 
-    vector<double> fluid_solid_diff(Solid.numOfNode), solid_fluid_diff(Solid.numOfNode,0.0); 
-    //vector<double> fluid_source(Fluid.numOfNode);
-    //#pragma omp parallel for
-    for(j=0; j<Vessel.numOfNode; j++){
-      //fluid_vessel_diff[j]=-Vessel.coupling_coefficient*(Vessel.phi_node[j]*Vessel.access_c(j)-Fluid.phi_node[j]*Solid.access_c(j));
-      vessel_fluid_diff[j]=-Fluid.coupling_coefficient_v*Fluid.phi_node[j]*(Fluid.access_c(j)-Vessel.access_c(j));
-      fluid_solid_diff[j]=-Solid.coupling_coefficient*Solid.phi_node[j]*(Solid.access_c(j)-Fluid.access_c(j));
-      //solid_fluid_diff[j]=-Fluid.coupling_coefficient_s*(Fluid.phi[j]*Fluid.access_c(j)-Solid.phi[j]*Solid.access_c(j));
-      //fluid_source[j] = vessel_fluid_diff[j] + solid_fluid_diff[j]; 
+    Vessel.boundary_setting(Vessel.dt*i);
+    vector<double> R_fluid(Fluid.numOfNode,0.0);
+    vector<double> R_solid(Fluid.numOfNode,0.0);
+    for(int j=0; j<Fluid.numOfNode; j++){
+      R_fluid[j] = -Fluid.coupling_coefficient_v*(Vessel.mass_centralization[j]*(Fluid.access_c(j)-Vessel.access_c(j)))\
+      -Fluid.coupling_coefficient_s*(Solid.mass_centralization[j]*(Fluid.access_c(j)-Solid.access_c(j)));
     }
-    //Vessel.time_step(fluid_vessel_diff);
-    Fluid.time_step(vessel_fluid_diff);
-    Solid.time_step(fluid_solid_diff);
-
+    for(int j=0; j<Fluid.numOfNode; j++){
+      R_solid[j] = -Solid.coupling_coefficient*(Fluid.mass_centralization[j]*(Solid.access_c(j)-Fluid.access_c(j)));
+    }
+    Fluid.time_step(R_fluid, Vessel.dt*i);
+    Solid.time_step(R_solid, Vessel.dt*i);
+    
     if(i%Fluid.output_interval==0){
       Fluid.dump(i/Fluid.output_interval);
     }
@@ -168,8 +158,7 @@ int main(int argc,char *argv[])
       Vessel.dump(i/Vessel.output_interval);
     }
     if(i%Vessel.output_interval==0){
-    //  #pragma omp parallel for
-      for(ic=0; ic<C_sum.size(); ic++){
+      for(int ic=0; ic<C_sum.size(); ic++){
         C_sum[ic] = Solid.phi_node[ic]*Solid.access_c(ic)+Fluid.phi_node[ic]*Fluid.access_c(ic)+Vessel.phi_node[ic]*Vessel.access_c(ic);
       }
       string dir = "out_C";

@@ -4,6 +4,7 @@
 #include<string>
 #include<sstream>
 #include<cmath>
+#include<set>
 using namespace std;
 
 void export_vtu(const std::string &file, vector<vector<int>> element, vector<vector<double>> node, vector<double> sdf)
@@ -135,8 +136,12 @@ int CountNumbersOfTextLines(string &filePath)
 
 int main()
 {
-    ifstream ifs("test.csv");
-    string file = "test.csv";
+  //out_region.csv
+  //test.csv
+  //O17_cell_value.csv
+  //vessel_cell_data.csv
+    ifstream ifs("input/test.csv");
+    string file = "input/test.csv";
     string str,tmp;
     vector<vector<double>> x;
     vector<double> sdf;
@@ -167,61 +172,82 @@ int main()
             tmp_element.push_back((i+1)*128+j);
             tmp_element.push_back((i+1)*128+j+1);
             tmp_element.push_back(i*128+j+1);
-            
             element.push_back(tmp_element);
-            for(int k=0; k<tmp_element.size(); k++){
-                cout << tmp_element[k] << " ";
-            }
-            //if(j==10) exit(1);
-            cout << endl;
         }
     }
 
-    ifs.open("O17_cell_value.csv");
-    string sdf_file = "O17_cell_value.csv";
-    int sdf_line = CountNumbersOfTextLines(sdf_file);
-    cout << sdf_line << endl;
-    vector<double> cell_sdf;
-    for(int i=0; i<sdf_line; i++){
+    ifs.open("input/O17_cell_value.csv");
+    string fluid_file = "input/O17_cell_value.csv";
+    int fluid_line = CountNumbersOfTextLines(fluid_file);
+    vector<double> fluid_phi(element.size());
+    for(int i=0; i<fluid_line; i++){
         getline(ifs,str);
         if(i==0) continue;
-        cell_sdf.push_back(stod(str));
+        fluid_phi[i-1]=stod(str);
     }
-    for(int i=0; i<cell_sdf.size(); i++){
-      if(cell_sdf[i]<0.0) cell_sdf[i] = 0.0;
+    for(int i=0; i<fluid_phi.size(); i++){
+      if(fluid_phi[i]<0.0) fluid_phi[i] = 0.0;
     }
 
     double muximum = 0.0;
-    for(int i=0; i<cell_sdf.size(); i++){
-      muximum = max(muximum, cell_sdf[i]);
+    for(int i=0; i<fluid_phi.size(); i++){
+      muximum = max(muximum, fluid_phi[i]);
     }
 
-    for(int i=0; i<cell_sdf.size(); i++){
-      cell_sdf[i] = cell_sdf[i] / muximum;
+    for(int i=0; i<fluid_phi.size(); i++){
+      fluid_phi[i] = fluid_phi[i] / muximum;
     }
-    //double minimum = 10000;
-    //for(int i=0; i<cell_sdf.size(); i++){
-    //    if(cell_sdf[i]<minimum){
-    //        minimum=cell_sdf[i];
-    //    }
+    
+    ifs.close();
+
+    //脳の外側の領域を決めている
+    vector<int> out_region_cell;
+    ifs.open("input/out_region.csv");
+    string out_region_file = "input/out_region.csv";
+    int out_region_line = CountNumbersOfTextLines(out_region_file);
+    for(int i=0; i<out_region_line; i++){
+        getline(ifs,str);
+        if(i==0) continue;
+        if(stod(str)<0.0001) out_region_cell.push_back(i-1);
+    }
+    ifs.close();
+
+    
+
+    vector<double> vessel_phi(element.size());
+    ifs.open("input/vessel_cell_data.csv");
+    string vessel_file = "input/vessel_cell_data.csv";
+    int vessel_line = CountNumbersOfTextLines(vessel_file);
+    for(int i=0; i<vessel_line; i++){
+        getline(ifs,str);
+        if(i==0) continue;
+        vessel_phi[i-1]=stod(str);
+    }
+    ifs.close();
+
+    vector<double> solid_phi(element.size());
+    
+    for(int i=0; i<element.size(); i++){
+      solid_phi[i] = (1.0-vessel_phi[i])*(1.0-fluid_phi[i]);
+      fluid_phi[i] = 1.0-vessel_phi[i]-solid_phi[i];
+    }
+
+    for(int i=0; i<out_region_cell.size(); i++){
+      solid_phi[out_region_cell[i]] = 0.0;
+      fluid_phi[out_region_cell[i]] = 0.0;
+      vessel_phi[out_region_cell[i]] = 0.0;
+    }
+
+    //for(int i=0; i<element.size(); i++){
+    //  if(vessel_phi[i] + solid_phi[i] + fluid_phi[i]>0.001) cout << vessel_phi[i] + solid_phi[i] + fluid_phi[i] << endl;
     //}
 
-    //for(int i=0; i<cell_sdf.size(); i++){
-    //    cell_sdf[i] += fabs(minimum);
-    //    if(cell_sdf[i]>32) cell_sdf[i] = -100;
-    //}
+    //export_vtu("solid_phi.vtu",element,x,solid_phi);
+    //export_vtu("fluid_phi.vtu",element,x,fluid_phi);
+    //export_vtu("vessel_phi.vtu",element,x,vessel_phi);
 
-    //double muximum = 0.0;
+    //output_calculation_file
 
-    //for(int i=0; i<cell_sdf.size(); i++){
-    //    if(cell_sdf[i]>muximum){
-    //        muximum = cell_sdf[i];
-    //    }
-    //}
-
-    //for(int i=0; i<cell_sdf.size(); i++){
-    //    cell_sdf[i] = cell_sdf[i] /muximum;
-    //}
     ofstream ofs("node.dat");
     for(int i=0; i<x.size(); i++){
       ofs << x[i][0] << " " << x[i][1] << " " << x[i][2] << endl;
@@ -237,36 +263,126 @@ int main()
     }
     ofs.close();
 
-    ofs.open("vessel_phi.dat");
-    for(int i=0; i<cell_sdf.size(); i++){
-      ofs << cell_sdf[i] << endl;
+    ofs.open("fluid_phi.dat");
+    for(int i=0; i<fluid_phi.size(); i++){
+      ofs << fluid_phi[i] << endl;
     }
     ofs.close();
 
-    string solid_node_file ="solid_phi_node.csv";
-    ifs.open("solid_phi_node.csv");
-    vector<int> solid_phi_node;
-    int solid_node_line = CountNumbersOfTextLines(solid_node_file);
-    for(int i=0; i<solid_node_line; i++){
-      getline(ifs,str);
-      if(i==0) continue;
-      solid_phi_node.push_back(stoi(str));
-    }
-    ifs.close();
-    vector<double> solid_phi(cell_sdf.size());
-    for(int i=0; i<cell_sdf.size(); i++){
-      solid_phi[i] = 1.0-cell_sdf[i];
-      if(fabs(solid_phi[i]-1.0)<0.001) solid_phi[i] = 0.0;
-    }
-    for(int i=0; i<solid_phi_node.size(); i++){
-      solid_phi[solid_phi_node[i]] = 1.0;
-    }
-
-    ofs.open("ISF_phi.dat");
-    for(int i=0; i<cell_sdf.size(); i++){
+    ofs.open("solid_phi.dat");
+    for(int i=0; i<solid_phi.size(); i++){
       ofs << solid_phi[i] << endl;
     }
     ofs.close();
 
-    export_vtu("17_cell_test.vtu",element,x,solid_phi);
+    ofs.open("vessel_phi.dat");
+    for(int i=0; i<vessel_phi.size(); i++){
+      ofs << vessel_phi[i] << endl;
+    }
+    ofs.close();
+
+    ofs.open("boundary_solid.dat");
+    set<int> solid_boundary_node;
+    for(int i=0; i<solid_phi.size(); i++){
+      if(solid_phi[i]<0.01){
+        for(int j=0; j<element[i].size(); j++){
+          solid_boundary_node.insert(element[i][j]);
+        }
+      }
+    }
+    for(auto itr=solid_boundary_node.begin(); itr!=solid_boundary_node.end(); itr++){
+      ofs << *(itr) << " " << 0.0 << endl;
+    }
+    ofs.close();
+
+    ofs.open("boundary_fluid.dat");
+    set<int> fluid_boundary_node;
+    for(int i=0; i<fluid_phi.size(); i++){
+      if(fluid_phi[i]<0.01){
+        for(int j=0; j<element[i].size(); j++){
+          fluid_boundary_node.insert(element[i][j]);
+        }
+      }
+    }
+    for(auto itr=fluid_boundary_node.begin(); itr!=fluid_boundary_node.end(); itr++){
+      ofs << *(itr) << " " << 0.0 << endl;
+    }
+    ofs.close();
+
+    ofs.open("boundary_vessel.dat");
+    set<int> vessel_boundary_zero_node;
+    for(int i=0; i<vessel_phi.size(); i++){
+      if(vessel_phi[i]<0.01){
+        for(int j=0; j<element[i].size(); j++){
+          vessel_boundary_zero_node.insert(element[i][j]);
+        }
+      }
+    }
+    set<int> vessel_boundary_source_node;
+    for(int i=0; i<vessel_phi.size(); i++){
+      if(vessel_phi[i]>0.0){
+        for(int j=0; j<element[i].size(); j++){
+          vessel_boundary_source_node.insert(element[i][j]);
+        }
+      }
+    }
+    for(auto itr=vessel_boundary_zero_node.begin(); itr!=vessel_boundary_zero_node.end(); itr++){
+      ofs << *(itr) << " " << 0.0 << endl;
+    }
+    for(auto itr=vessel_boundary_source_node.begin(); itr!=vessel_boundary_source_node.end(); itr++){
+      ofs << *(itr) << " " << 1.0 << endl;
+    }
+    ofs.close();
+
+    //nodeのphi
+    vector<double> vessel_node_phi(x.size());
+    ifs.open("input/vessel_node_phi.csv");
+    string vessel_node_file = "input/vessel_node_phi.csv";
+    int vessel_node_line = CountNumbersOfTextLines(vessel_node_file);
+    for(int i=0; i<vessel_node_line; i++){
+        getline(ifs,str);
+        if(i==0) continue;
+        vessel_node_phi[i-1]=stod(str);
+    }
+    ifs.close();
+
+    vector<double> fluid_node_phi(x.size());
+    ifs.open("input/fluid_node_phi.csv");
+    string fluid_node_file = "input/fluid_node_phi.csv";
+    int fluid_node_line = CountNumbersOfTextLines(fluid_node_file);
+    for(int i=0; i<fluid_node_line; i++){
+        getline(ifs,str);
+        if(i==0) continue;
+        fluid_node_phi[i-1]=stod(str);
+    }
+    ifs.close();
+
+    vector<double> solid_node_phi(x.size());
+    ifs.open("input/solid_node_phi.csv");
+    string solid_node_file = "input/solid_node_phi.csv";
+    int solid_node_line = CountNumbersOfTextLines(solid_node_file);
+    for(int i=0; i<solid_node_line; i++){
+        getline(ifs,str);
+        if(i==0) continue;
+        solid_node_phi[i-1]=stod(str);
+    }
+    ifs.close();
+
+    ofs.open("fluid_node_phi.dat");
+    for(int i=0; i<fluid_node_phi.size(); i++){
+      ofs << fluid_node_phi[i] << endl;
+    }
+    ofs.close();
+
+    ofs.open("solid_node_phi.dat");
+    for(int i=0; i<solid_node_phi.size(); i++){
+      ofs << solid_node_phi[i] << endl;
+    }
+    ofs.close();
+
+    ofs.open("vessel_node_phi.dat");
+    for(int i=0; i<vessel_node_phi.size(); i++){
+      ofs << vessel_node_phi[i] << endl;
+    }
+    ofs.close();
 }

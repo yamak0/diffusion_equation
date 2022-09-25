@@ -74,21 +74,18 @@ void twodimensinal_diffusion::input_phi()
   }
   ifs.close();
 
-  ifs.open(phi_visualize_file);
-  phi_v.resize(numOfElm);
-  for(int i=0; i<numOfElm; i++){
-    getline(ifs,str);
-    phi_v[i] = stod(str);
-  }
-  ifs.close();
-
   ifs.open(node_phi_file);
-  phi_node.resize(numOfNode);
-  for(int i=0; i<numOfNode; i++){
+  phi_node.resize(numOfElm);
+  for(int i=0; i<numOfElm; i++){
     getline(ifs,str);
     phi_node[i] = stod(str);
   }
   ifs.close();
+
+  if(material_judge=="F") export_vtu("fluid_phi.vtu","CELL",phi);
+  if(material_judge=="S") export_vtu("solid_phi.vtu","CELL",phi);
+  if(material_judge=="V") export_vtu("vessel_phi.vtu","CELL",phi);
+
 }
 
 void twodimensinal_diffusion::input_info(std::string input_file)
@@ -170,13 +167,8 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
-        label = base_label + "/node_phi_file";
+        label = base_label + "/phi_node_file";
         if ( !tp.getInspectedValue(label,node_phi_file)){
-            cout << label << " is not set" << endl;
-            exit(0);
-        }
-        label = base_label + "/phi_visualize_file";
-        if ( !tp.getInspectedValue(label,phi_visualize_file)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -225,13 +217,8 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
-        label = base_label + "/node_phi_file";
+        label = base_label + "/phi_node_file";
         if ( !tp.getInspectedValue(label,node_phi_file)){
-            cout << label << " is not set" << endl;
-            exit(0);
-        }
-        label = base_label + "/phi_visualize_file";
-        if ( !tp.getInspectedValue(label,phi_visualize_file)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -281,13 +268,8 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
-        label = base_label + "/node_phi_file";
+        label = base_label + "/phi_node_file";
         if ( !tp.getInspectedValue(label,node_phi_file)){
-            cout << label << " is not set" << endl;
-            exit(0);
-        }
-        label = base_label + "/phi_visualize_file";
-        if ( !tp.getInspectedValue(label,phi_visualize_file)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -299,11 +281,10 @@ void twodimensinal_diffusion::input_info(std::string input_file)
     cout << "Read phi" << endl;
     input_phi();
     cout << "boundary initialize" << endl;
-    if(material_judge=="V") boundary_initialize();
-    export_vtu("test.vtu");
+    boundary_initialize();
 }
 
-void twodimensinal_diffusion::export_vtu(const std::string &file)
+void twodimensinal_diffusion::export_vtu(const std::string &file, std::string judge, vector<double> output_value)
 {
     FILE *fp;
   if ((fp = fopen(file.c_str(), "w")) == NULL)
@@ -343,13 +324,17 @@ void twodimensinal_diffusion::export_vtu(const std::string &file)
   fprintf(fp, "</Cells>\n");
 
   fprintf(fp, "<PointData>\n");
-
-  fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
-  offset += sizeof(int) + sizeof(double) * node.size();
-
+  if(judge=="point"){
+    fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
+    offset += sizeof(int) + sizeof(double) * node.size();
+  }
   fprintf(fp, "</PointData>\n");
 
   fprintf(fp, "<CellData>\n");
+  if(judge=="CELL"){
+    fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
+    offset += sizeof(int) + sizeof(double) * element.size();
+  }
   fprintf(fp, "</CellData>\n");
   fprintf(fp, "</Piece>\n");
   fprintf(fp, "</UnstructuredGrid>\n");
@@ -375,14 +360,24 @@ void twodimensinal_diffusion::export_vtu(const std::string &file)
   ofs.write((char *)data_d, size);
 
   num=0;
-  for (int ic = 0; ic < node.size(); ic++){
-      data_d[num]   = C[ic];
-      num++;
+  if(judge=="point"){
+    for (int ic = 0; ic < node.size(); ic++){
+        data_d[num]   = output_value[ic];
+        num++;
+    }
+    size=sizeof(double)*node.size();
+    ofs.write((char *)&size, sizeof(size));
+    ofs.write((char *)data_d, size);
   }
-  size=sizeof(double)*node.size();
-  ofs.write((char *)&size, sizeof(size));
-  ofs.write((char *)data_d, size);
-
+  if(judge=="CELL"){
+    for (int ic = 0; ic < element.size(); ic++){
+        data_d[num]   = output_value[ic];
+        num++;
+    }
+    size=sizeof(double)*element.size();
+    ofs.write((char *)&size, sizeof(size));
+    ofs.write((char *)data_d, size);
+  }
   delete data_d;
 
   ofs.close();
@@ -400,15 +395,27 @@ void twodimensinal_diffusion::export_vtu(const std::string &file)
 void twodimensinal_diffusion::dump(int ic)
 {
     if(material_judge=="S"){
-        string filename = outputDir + "/solid_" + to_string(ic) + ".vtu";
-        export_vtu(filename);
+      vector<double> phiC(numOfNode);
+      for(int i=0; i<numOfNode; i++){
+        phiC[i] = phi_node[i]*C[i];
+      }
+      string filename = outputDir + "/solid_" + to_string(ic) + ".vtu";
+      export_vtu(filename, "point", phiC);
     }
     if(material_judge=="F"){
-        string filename = outputDir + "/fluid_" + to_string(ic) + ".vtu";
-        export_vtu(filename);
+      vector<double> phiC(numOfNode);
+      for(int i=0; i<numOfNode; i++){
+        phiC[i] = phi_node[i]*C[i];
+      }
+      string filename = outputDir + "/fluid_" + to_string(ic) + ".vtu";
+      export_vtu(filename, "point", phiC);
     }
     if(material_judge=="V"){
-        string filename = outputDir + "/vessel_" + to_string(ic) + ".vtu";
-        export_vtu(filename);
+      vector<double> phiC(numOfNode);
+      for(int i=0; i<numOfNode; i++){
+        phiC[i] = phi_node[i]*C[i];
+      }
+      string filename = outputDir + "/vessel_" + to_string(ic) + ".vtu";
+      export_vtu(filename, "point", phiC);
     }
 }

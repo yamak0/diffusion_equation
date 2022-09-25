@@ -9,10 +9,10 @@
 #include<fstream>
 #include<iostream>
 #include<omp.h>
+#include<set>
 
 class twodimensinal_diffusion{
     private:
-        double dt;
         double diffusion_coefficient;
         int numOfElm, numOfBoundaryNode;
         std::string material_judge;
@@ -20,14 +20,17 @@ class twodimensinal_diffusion{
         std::string node_file, element_file, boundary_file, phi_file, phi_visualize_file, node_phi_file;
         std::vector<double> C;
         std::vector<std::vector<double>> D;
-        std::vector<double> mass_centralization;
+        std::vector<std::vector<double>> mass;
         std::vector<double> boundary_value;
         std::vector<std::vector<double>> gauss;
+        std::set<int> boundary_node_judge;
     public:
+        double dt;
         int time, output_interval, numOfNode;
         double coupling_coefficient;
         double coupling_coefficient_v;
         double coupling_coefficient_s;
+        std::vector<double> mass_centralization;
         std::vector<int> boundary_node;
         std::vector<double> phi, phi_v, phi_node;
         std::vector<std::vector<double>> node;
@@ -37,7 +40,7 @@ class twodimensinal_diffusion{
         {
             material_judge = mat;
         }
-        void export_vtu(const std::string &file);
+        void export_vtu(const std::string &file, std::string judge, std::vector<double> output_value);
         void input_info(std::string input_file);
         void input_phi();
         int CountNumbersOfTextLines(std::string &filePath);
@@ -49,8 +52,8 @@ class twodimensinal_diffusion{
         void gauss_point_setting();
         void matrix_initialize();
         void calc_matrix();
-        void boundary_setting();
-        void time_step(std::vector<double> diff);
+        void boundary_setting(double time);
+        void time_step(std::vector<double> R, double time);
         void dump(int ic);
         double access_c(int ic);
 };
