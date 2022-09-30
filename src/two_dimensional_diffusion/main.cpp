@@ -1,6 +1,7 @@
 #include"two_diffusion.hpp"
 #include"shapefunction.hpp"
 #include <sys/stat.h>
+#include <time.h>
 
 using namespace std;
 
@@ -100,6 +101,7 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
 }
 int main(int argc,char *argv[])
 {
+  omp_set_num_threads(2);
   //input argument
   if(argc!=2){
     printf("Invalid input. Please set tp file\n");

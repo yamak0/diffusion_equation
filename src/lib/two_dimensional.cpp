@@ -1,6 +1,5 @@
 #include"two_diffusion.hpp"
 #include"shapefunction.hpp"
-#include <time.h>
 using namespace std;
 
 void twodimensinal_diffusion::boundary_initialize()
