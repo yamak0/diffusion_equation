@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
+using namespace H5;
 using namespace std;
 
 void export_vtu(const std::string &file, vector<vector<int>> element, vector<vector<double>> node, vector<double> C)
@@ -99,8 +100,53 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
   fprintf(fp, "</VTKFile>\n");
   fclose(fp);
 }
+void exportHDF5_double_1D(H5::H5File &file, const std::string &dataName, vector<double> i_data, int i_dim) 
+{
+  H5std_string DATASET_NAME(dataName.c_str());
+
+  hsize_t dim[1] = {i_dim}; // dataset dimensions
+  H5::DataSpace dataspace(1, dim);
+
+  double *data;
+  data = new double[i_data.size()];
+
+  for (int i = 0; i < i_data.size(); i++) {
+    data[i] = i_data[i];
+  }
+
+  H5::IntType datatype(H5::PredType::NATIVE_DOUBLE);
+  datatype.setOrder(H5T_ORDER_LE);
+  H5::DataSet dataset = file.createDataSet(DATASET_NAME, datatype, dataspace);
+  dataset.write(&data[0], H5::PredType::NATIVE_DOUBLE);
+  delete[] data;
+}
+
+void hdf5_dump(string output_h5_name, int ic, vector<double> C_sum)
+{
+  H5std_string FILE_NAME(output_h5_name.c_str());
+  if (ic == 0) {
+    H5File file(FILE_NAME, H5F_ACC_TRUNC);
+    std::string dataName;
+    std::string Gr = "/"+to_string(ic);
+    file.createGroup(Gr.c_str());
+    Group group = file.openGroup(Gr.c_str());
+    dataName = Gr + "/O17_concentration";
+    exportHDF5_double_1D(file, dataName, C_sum, C_sum.size());
+  }
+  else {
+    H5File file(FILE_NAME, H5F_ACC_RDWR);
+    std::string dataName;
+    std::string Gr = "/" + to_string(ic);
+    file.createGroup(Gr.c_str());
+    Group group = file.openGroup(Gr.c_str());
+    dataName = Gr + "/O17_concentration";
+    exportHDF5_double_1D(file, dataName, C_sum, C_sum.size());
+  }
+}
+
 int main(int argc,char *argv[])
 {
+
   omp_set_num_threads(2);
   //input argument
   if(argc!=2){
@@ -136,15 +182,13 @@ int main(int argc,char *argv[])
 
   cout << "main loop" << endl;
   for(int i=0; i<Vessel.time; i++){
-    cout << i << endl;
     Vessel.boundary_setting(Vessel.dt*i);
     vector<double> R_fluid(Fluid.numOfNode,0.0);
     vector<double> R_solid(Fluid.numOfNode,0.0);
+    #pragma omp parallel for
     for(int j=0; j<Fluid.numOfNode; j++){
       R_fluid[j] = -Fluid.coupling_coefficient_v*(Vessel.mass_centralization[j]*(Fluid.access_c(j)-Vessel.access_c(j)))\
       -Fluid.coupling_coefficient_s*(Solid.mass_centralization[j]*(Fluid.access_c(j)-Solid.access_c(j)));
-    }
-    for(int j=0; j<Fluid.numOfNode; j++){
       R_solid[j] = -Solid.coupling_coefficient*(Fluid.mass_centralization[j]*(Solid.access_c(j)-Fluid.access_c(j)));
     }
     Fluid.time_step(R_fluid, Vessel.dt*i);
@@ -152,12 +196,15 @@ int main(int argc,char *argv[])
     
     if(i%Fluid.output_interval==0){
       Fluid.dump(i/Fluid.output_interval);
+      Fluid.hdf5_dump(i/Fluid.output_interval);
     }
     if(i%Solid.output_interval==0){
       Solid.dump(i/Solid.output_interval);
+      Solid.hdf5_dump(i/Solid.output_interval);
     }
     if(i%Vessel.output_interval==0){
       Vessel.dump(i/Vessel.output_interval);
+      Vessel.hdf5_dump(i/Vessel.output_interval);
     }
     if(i%Vessel.output_interval==0){
       for(int ic=0; ic<C_sum.size(); ic++){
@@ -166,7 +213,22 @@ int main(int argc,char *argv[])
       string dir = "out_C";
       mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
       string filename = dir + "/test_" + to_string(i/Vessel.output_interval) + ".vtu";
+      //cout << filename << endl;
+      hdf5_dump("sum_O17.h5",i/Vessel.output_interval,C_sum);
       export_vtu(filename,Vessel.element,Vessel.node,C_sum);
     }
   }
+  vector<double> evaluation_phi(Vessel.numOfNode);
+  ifstream ifs("evaluation_C.dat");
+  string str;
+  double MRI_evaluation=0.0;
+  double calc_evaluation=0.0;
+  for(int i=0; i<Vessel.numOfNode; i++){
+    getline(ifs,str);
+    evaluation_phi[i] = stod(str);
+    MRI_evaluation += evaluation_phi[i];
+    calc_evaluation += C_sum[i];
+  }
+  cout << pow(MRI_evaluation-calc_evaluation,2.0) << endl;
+  ifs.close();
 }

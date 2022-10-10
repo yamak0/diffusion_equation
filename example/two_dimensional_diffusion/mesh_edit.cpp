@@ -197,8 +197,36 @@ int main()
     for(int i=0; i<fluid_phi.size(); i++){
       fluid_phi[i] = fluid_phi[i] / muximum;
     }
-    
     ifs.close();
+    //評価用O17データの作成
+    ifs.open("input/raw_data_O17_evaluation.csv");
+    string evaluation_file = "input/raw_data_O17_evaluation.csv";
+    int evaluation_line = CountNumbersOfTextLines(evaluation_file);
+    vector<double> evaluation_phi(x.size());
+    for(int i=0; i<evaluation_line; i++){
+        getline(ifs,str);
+        if(i==0) continue;
+        evaluation_phi[i-1]=stod(str);
+    }
+    for(int i=0; i<evaluation_phi.size(); i++){
+      if(evaluation_phi[i]<0.0) evaluation_phi[i] = 0.0;
+    }
+
+    muximum = 0.0;
+    for(int i=0; i<evaluation_phi.size(); i++){
+      muximum = max(muximum, evaluation_phi[i]);
+    }
+
+    for(int i=0; i<evaluation_phi.size(); i++){
+      evaluation_phi[i] = evaluation_phi[i] / muximum;
+    }
+    ifs.close();
+
+    ofstream ofs("evaluation_C.dat");
+    for(int i=0; i<evaluation_phi.size(); i++){
+      ofs << evaluation_phi[i] << endl;
+    }
+    ofs.close();
 
     //脳の外側の領域を決めている
     vector<int> out_region_cell;
@@ -248,7 +276,7 @@ int main()
 
     //output_calculation_file
 
-    ofstream ofs("node.dat");
+    ofs.open("node.dat");
     for(int i=0; i<x.size(); i++){
       ofs << x[i][0] << " " << x[i][1] << " " << x[i][2] << endl;
     }

@@ -1,5 +1,6 @@
 #include"two_diffusion.hpp"
 #include"shapefunction.hpp"
+using namespace H5;
 using namespace std;
 
 int twodimensinal_diffusion::CountNumbersOfTextLines(string &filePath )
@@ -117,6 +118,13 @@ void twodimensinal_diffusion::input_info(std::string input_file)
       cout << label << " is not set" << endl;
       exit(0);
     }
+    label = base_label + "/omp_num_threads";
+    if ( !tp.getInspectedValue(label,numofomp)){
+      cout << label << " is not set" << endl;
+      exit(0);
+    }
+    omp_set_num_threads(numofomp);
+
     if(material_judge=="F"){
         base_label = "/Fluid";
         label = base_label + "/dt";
@@ -172,6 +180,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
+        label = base_label + "/output_h5_name";
+        if ( !tp.getInspectedValue(label,output_h5_name)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
     }
     if(material_judge=="S"){
         base_label = "/Solid";
@@ -219,6 +232,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
         }
         label = base_label + "/phi_node_file";
         if ( !tp.getInspectedValue(label,node_phi_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
+        label = base_label + "/output_h5_name";
+        if ( !tp.getInspectedValue(label,output_h5_name)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -270,6 +288,11 @@ void twodimensinal_diffusion::input_info(std::string input_file)
         }
         label = base_label + "/phi_node_file";
         if ( !tp.getInspectedValue(label,node_phi_file)){
+            cout << label << " is not set" << endl;
+            exit(0);
+        }
+        label = base_label + "/output_h5_name";
+        if ( !tp.getInspectedValue(label,output_h5_name)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -418,4 +441,48 @@ void twodimensinal_diffusion::dump(int ic)
       string filename = outputDir + "/vessel_" + to_string(ic) + ".vtu";
       export_vtu(filename, "point", phiC);
     }
+}
+
+void twodimensinal_diffusion::exportHDF5_double_1D(H5::H5File &file, const std::string &dataName, vector<double> i_data, int i_dim) 
+{
+  H5std_string DATASET_NAME(dataName.c_str());
+
+  hsize_t dim[1] = {i_dim}; // dataset dimensions
+  H5::DataSpace dataspace(1, dim);
+
+  double *data;
+  data = new double[i_data.size()];
+
+  for (int i = 0; i < i_data.size(); i++) {
+    data[i] = i_data[i];
+  }
+
+  H5::IntType datatype(H5::PredType::NATIVE_DOUBLE);
+  datatype.setOrder(H5T_ORDER_LE);
+  H5::DataSet dataset = file.createDataSet(DATASET_NAME, datatype, dataspace);
+  dataset.write(&data[0], H5::PredType::NATIVE_DOUBLE);
+  delete[] data;
+}
+
+void twodimensinal_diffusion::hdf5_dump(int ic)
+{
+  H5std_string FILE_NAME(output_h5_name.c_str());
+  if (ic == 0) {
+    H5File file(FILE_NAME, H5F_ACC_TRUNC);
+    std::string dataName;
+    std::string Gr = "/"+to_string(ic);
+    file.createGroup(Gr.c_str());
+    Group group = file.openGroup(Gr.c_str());
+    dataName = Gr + "/O17_concentration";
+    exportHDF5_double_1D(file, dataName, C, C.size());
+  }
+  else {
+    H5File file(FILE_NAME, H5F_ACC_RDWR);
+    std::string dataName;
+    std::string Gr = "/" + to_string(ic);
+    file.createGroup(Gr.c_str());
+    Group group = file.openGroup(Gr.c_str());
+    dataName = Gr + "/O17_concentration";
+    exportHDF5_double_1D(file, dataName, C, C.size());
+  }
 }

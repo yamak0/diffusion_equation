@@ -1,6 +1,9 @@
 #include"two_diffusion.hpp"
 #include"shapefunction.hpp"
 using namespace std;
+using namespace H5;
+
+
 
 void twodimensinal_diffusion::boundary_initialize()
 {
@@ -93,8 +96,8 @@ void twodimensinal_diffusion::calc_dNdx(vector<vector<double>> &dNdx, vector<vec
 
 void twodimensinal_diffusion::calc_matrix()
 {
-  int i,j,k,l,p;
-  for(i=0; i<element.size(); i++){
+  #pragma omp parallel for
+  for(int i=0; i<element.size(); i++){
     cout << i << endl;
     vector<double> N(4); 
     vector<vector<double>> dNdr(4, vector<double>(2));
@@ -102,8 +105,7 @@ void twodimensinal_diffusion::calc_matrix()
     vector<vector<double>> element_D(4, vector<double>(4,0.0));
     vector<vector<double>> element_mass(4, vector<double>(4,0.0));
     vector<double> element_mass_centralization(4,0.0);
-    
-    for(j=0; j<4; j++){
+    for(int j=0; j<4; j++){
       ShapeFunction2D::C2D4_N(N,gauss[j][0],gauss[j][1]);
       ShapeFunction2D::C2D4_dNdr(dNdr,gauss[j][0],gauss[j][1]);
       vector<vector<double>> dxdr(2, vector<double>(2)), drdx(2, vector<double>(2));
@@ -112,32 +114,32 @@ void twodimensinal_diffusion::calc_matrix()
       double detJ = dxdr[0][0] * dxdr[1][1]  - dxdr[1][0] * dxdr[0][1];
       vector<vector<double>> dNdx(4, vector<double>(2, 0.0));
       calc_dNdx(dNdx, dNdr, drdx);
-      for(k=0; k<4; k++){
-        for(l=0; l<4; l++){
-          for(p=0; p<2; p++){
+      for(int k=0; k<4; k++){
+        for(int l=0; l<4; l++){
+          for(int p=0; p<2; p++){
             element_D[k][l] += dNdx[k][p]*dNdx[l][p];
           }
         }
       }
       
-      for(k=0; k<4; k++){
-        for(l=0; l<4; l++){
+      for(int k=0; k<4; k++){
+        for(int l=0; l<4; l++){
           element_mass[k][l] = N[k] * N[l];
         }
       }
       
-      for(k=0; k<4; k++){
-        for(l=0; l<4; l++){
+      for(int k=0; k<4; k++){
+        for(int l=0; l<4; l++){
           D[element[i][k]][element[i][l]] += diffusion_coefficient * element_D[k][l] * phi[i] * detJ;
-          mass[element[i][k]][element[i][l]] += diffusion_coefficient * element_mass[k][l] * phi[i] * detJ;
+          mass[element[i][k]][element[i][l]] += element_mass[k][l] * phi[i] * detJ;
         }
       }
     }
   }
 
-  for(i=0; i<mass.size(); i++){
+  for(int i=0; i<mass.size(); i++){
     mass_centralization[i]=0.0;
-    for(j=0; j<mass[i].size(); j++){
+    for(int j=0; j<mass[i].size(); j++){
       mass_centralization[i] += mass[i][j];
     }
   }
@@ -165,21 +167,19 @@ void twodimensinal_diffusion::time_step(vector<double> R, double time_t)
   vector<double> MDcR(numOfNode,0.0);
   vector<double> MDC(node.size(),0.0);
     
-  int i,j;
-  #pragma omp parallel for private(j)
-  for(i=0; i<numOfNode; i++){
-    for(j=0; j<numOfNode; j++){
+  #pragma omp parallel for
+  for(int i=0; i<numOfNode; i++){
+    for(int j=0; j<numOfNode; j++){
         DC[i] += D[i][j] * (C[j]);
     }
   }
 
   #pragma omp parallel for
-  for(i=0; i<numOfNode; i++){
+  for(int i=0; i<numOfNode; i++){
     DcR[i] = DC[i]-R[i];
     if(boundary_node_judge.find(i)==boundary_node_judge.end()){
       MDcR[i] = 1.0/mass_centralization[i]*DcR[i];
       C[i] = C[i] - dt * MDcR[i];
-      if(C[i]>1.0) C[i]=1.0;
     }
   }  
   boundary_setting(time_t);

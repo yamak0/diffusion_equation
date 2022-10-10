@@ -1,6 +1,7 @@
 #ifndef _DIFFUSION_H_
 #define _DIFFUSION_H_
 
+#include <H5Cpp.h>
 #include<vector>
 #include <sys/stat.h>
 #include "TextParser.h"
@@ -11,11 +12,13 @@
 #include<omp.h>
 #include<set>
 
+
 class twodimensinal_diffusion{
     private:
         double diffusion_coefficient;
         int numOfElm, numOfBoundaryNode;
         std::string material_judge;
+        int numofomp;
         std::string gauss_setting, outputDir;
         std::string node_file, element_file, boundary_file, phi_file, phi_visualize_file, node_phi_file;
         std::vector<double> C;
@@ -24,6 +27,7 @@ class twodimensinal_diffusion{
         std::vector<double> boundary_value;
         std::vector<std::vector<double>> gauss;
         std::set<int> boundary_node_judge;
+        std::string output_h5_name;
     public:
         double dt;
         int time, output_interval, numOfNode;
@@ -55,6 +59,8 @@ class twodimensinal_diffusion{
         void boundary_setting(double time);
         void time_step(std::vector<double> R, double time);
         void dump(int ic);
+        void hdf5_dump(int ic);
+        void exportHDF5_double_1D(H5::H5File &file, const std::string &dataName, std::vector<double> i_data, int i_dim);
         double access_c(int ic);
 };
 #endif
