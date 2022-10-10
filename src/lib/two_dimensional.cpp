@@ -98,7 +98,6 @@ void twodimensinal_diffusion::calc_matrix()
 {
   #pragma omp parallel for
   for(int i=0; i<element.size(); i++){
-    cout << i << endl;
     vector<double> N(4); 
     vector<vector<double>> dNdr(4, vector<double>(2));
     double volume=0.0;

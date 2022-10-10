@@ -220,6 +220,9 @@ int main(int argc,char *argv[])
   }
   vector<double> evaluation_phi(Vessel.numOfNode);
   ifstream ifs("evaluation_C.dat");
+  if(!ifs){
+    cout << "can't open evaluation_C.dat" << endl;
+  }
   string str;
   double MRI_evaluation=0.0;
   double calc_evaluation=0.0;

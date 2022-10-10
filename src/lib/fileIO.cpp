@@ -37,6 +37,9 @@ void twodimensinal_diffusion::read_geometry()
         node[i].resize(3);
     }
     ifstream ifs(node_file);
+    if(!ifs){
+      cout << "can't open " + node_file << endl;
+    }
     for(int i=0; i<numOfNode; i++){
         getline(ifs,str);
         istringstream stream(str);
@@ -53,6 +56,9 @@ void twodimensinal_diffusion::read_geometry()
         element[i].resize(4);
     }
     ifs.open(element_file);
+    if(!ifs){
+      cout << "can't open " << element_file << endl;
+    }
     for(int i=0; i<numOfElm; i++){
         getline(ifs,str);
         istringstream stream(str);
@@ -68,6 +74,9 @@ void twodimensinal_diffusion::input_phi()
 {
   string str,tmp;
   ifstream ifs(phi_file);
+  if(!ifs){
+    cout << "can't open " << phi_file << endl;
+  }
   phi.resize(numOfElm);
   for(int i=0; i<numOfElm; i++){
     getline(ifs,str);
@@ -76,6 +85,9 @@ void twodimensinal_diffusion::input_phi()
   ifs.close();
 
   ifs.open(node_phi_file);
+  if(!ifs){
+    cout << "can't open " << node_phi_file << endl;
+  }
   phi_node.resize(numOfElm);
   for(int i=0; i<numOfElm; i++){
     getline(ifs,str);
