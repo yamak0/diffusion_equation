@@ -11,7 +11,7 @@ Fluid
   dt = 0.1
   time_step = 3600
   output_interval = 100
-  diffusion_coefficient = 2.5e-9
+  diffusion_coefficient = 2.6e-3
   outputDir = "fluid"
   boundary_file = "boundary_fluid.dat"
   couplint_coefficient_v = 1e-1
@@ -26,7 +26,7 @@ Solid
   dt = 0.1
   time_step = 3600
   output_interval = 100
-  diffusion_coefficient = 8.3e-10
+  diffusion_coefficient = 0.75e-3
   outputDir = "solid"
   boundary_file = "boundary_solid.dat"
   couplint_coefficient = 1e-13

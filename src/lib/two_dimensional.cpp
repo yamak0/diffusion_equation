@@ -153,8 +153,10 @@ void twodimensinal_diffusion::boundary_setting(double time_t)
   }
   else{
     for(int i=0; i<numOfBoundaryNode; i++){
-      if(time_t<=60.0) C[boundary_node[i]] = (boundary_value[i]/60.0)*time_t;
-      if(time_t>60.0) C[boundary_node[i]] = boundary_value[i];
+      double param = 0.020, sigma=0.8, mu=-20.0;
+      double time_tmp = ((time_t-mu)-(time*dt-mu)/2.0)*param;
+      C[boundary_node[i]] = exp(-pow(time_tmp,2.0)/(2.0*pow(sigma,2.0)));
+      //if(i==0) cout << exp(-pow(time_tmp,2.0)/(2.0*pow(sigma,2.0))) << endl;
     }
   }
 }

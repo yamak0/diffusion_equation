@@ -146,8 +146,6 @@ void hdf5_dump(string output_h5_name, int ic, vector<double> C_sum)
 
 int main(int argc,char *argv[])
 {
-
-  omp_set_num_threads(2);
   //input argument
   if(argc!=2){
     printf("Invalid input. Please set tp file\n");
