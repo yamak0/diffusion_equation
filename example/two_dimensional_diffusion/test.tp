@@ -17,7 +17,6 @@ Fluid
   couplint_coefficient_v = 1e-1
   couplint_coefficient_s = 1e-13
   phi_file = "fluid_phi.dat"
-  phi_node_file ="fluid_node_phi.dat"
   output_h5_name = "fluid_c.h5"
 }
 
@@ -31,7 +30,6 @@ Solid
   boundary_file = "boundary_solid.dat"
   couplint_coefficient = 1e-13
   phi_file = "solid_phi.dat"
-  phi_node_file ="solid_node_phi.dat"
   output_h5_name = "solid_c.h5"
 }
 
@@ -45,6 +43,5 @@ Vessel
   boundary_file = "boundary_vessel.dat"
   couplint_coefficient = 1e-1
   phi_file = "vessel_phi.dat"
-  phi_node_file ="vessel_node_phi.dat"
   output_h5_name = "vessel_c.h5"
 }

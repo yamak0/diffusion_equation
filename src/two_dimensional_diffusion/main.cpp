@@ -205,31 +205,36 @@ int main(int argc,char *argv[])
       Vessel.hdf5_dump(i/Vessel.output_interval);
     }
     if(i%Vessel.output_interval==0){
-      for(int ic=0; ic<C_sum.size(); ic++){
-        C_sum[ic] = Solid.phi_node[ic]*Solid.access_c(ic)+Fluid.phi_node[ic]*Fluid.access_c(ic)+Vessel.phi_node[ic]*Vessel.access_c(ic);
+      vector<double> C_sum(Vessel.numOfElm);
+      vector<double> Vessel_phiC(Vessel.numOfElm),CSF_phiC(Fluid.numOfElm),ISF_phiC(Solid.numOfElm);
+      Vessel.transform_point_data_to_cell_data(Vessel_phiC, Vessel.C);
+      Fluid.transform_point_data_to_cell_data(CSF_phiC, Fluid.C);
+      Solid.transform_point_data_to_cell_data(ISF_phiC, Solid.C);
+      for(int j=0; j<Vessel.numOfElm; j++){
+        C_sum[j] = Vessel_phiC[j] + CSF_phiC[j] + ISF_phiC[j];
       }
       string dir = "out_C";
       mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
       string filename = dir + "/test_" + to_string(i/Vessel.output_interval) + ".vtu";
-      //cout << filename << endl;
+      cout << 
       hdf5_dump("sum_O17.h5",i/Vessel.output_interval,C_sum);
       export_vtu(filename,Vessel.element,Vessel.node,C_sum);
     }
   }
-  vector<double> evaluation_phi(Vessel.numOfNode);
+  vector<double> evaluation_phi(Vessel.numOfElm);
   ifstream ifs("evaluation_C.dat");
   if(!ifs){
     cout << "can't open evaluation_C.dat" << endl;
   }
   string str;
-  double MRI_evaluation=0.0;
-  double calc_evaluation=0.0;
-  for(int i=0; i<Vessel.numOfNode; i++){
+  for(int i=0; i<Vessel.numOfElm; i++){
     getline(ifs,str);
     evaluation_phi[i] = stod(str);
-    MRI_evaluation += evaluation_phi[i];
-    calc_evaluation += C_sum[i];
   }
-  cout << pow(MRI_evaluation-calc_evaluation,2.0) << endl;
   ifs.close();
+  double evaluation=0.0;
+  for(int i=0; i<Vessel.numOfElm; i++){
+    evaluation += sqrt(pow(evaluation_phi[i]-C_sum[i],2.0));
+  }
+  cout << evaluation << endl;
 }

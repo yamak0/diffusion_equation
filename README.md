@@ -11,13 +11,10 @@
 - element.dat : 有限要素の構成情報
 - boundary_fluid.dat : 脳脊髄液領域の境界条件
 - fluid_phi.dat : 各要素の脳脊髄液領域の相割合
-- fluid_node_phi.dat : 各要素の脳脊髄液領域の相割合を節点に変換したもの
 - boundary_solid.dat : 固体領域の境界条件
 - solid_phi.dat : 各要素の固体領域の相割合
-- solid_node_phi.dat : 各要素の固体領域の相割合を節点に変換したもの
 - boundary_vessel.dat : 血管領域の境界条件
 - vessel_phi.dat : 各要素の血管領域の相割合
-- vessel_node_phi.dat : 各要素の血管領域の相割合を節点に変換したもの
 
 # コードの動かし方
 build.shを実行するとコードが自動でビルドされます．

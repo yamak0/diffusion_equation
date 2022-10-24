@@ -84,21 +84,9 @@ void twodimensinal_diffusion::input_phi()
   }
   ifs.close();
 
-  ifs.open(node_phi_file);
-  if(!ifs){
-    cout << "can't open " << node_phi_file << endl;
-  }
-  phi_node.resize(numOfElm);
-  for(int i=0; i<numOfElm; i++){
-    getline(ifs,str);
-    phi_node[i] = stod(str);
-  }
-  ifs.close();
-
   if(material_judge=="F") export_vtu("fluid_phi.vtu","CELL",phi);
   if(material_judge=="S") export_vtu("solid_phi.vtu","CELL",phi);
   if(material_judge=="V") export_vtu("vessel_phi.vtu","CELL",phi);
-
 }
 
 void twodimensinal_diffusion::input_info(std::string input_file)
@@ -187,11 +175,6 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
-        label = base_label + "/phi_node_file";
-        if ( !tp.getInspectedValue(label,node_phi_file)){
-            cout << label << " is not set" << endl;
-            exit(0);
-        }
         label = base_label + "/output_h5_name";
         if ( !tp.getInspectedValue(label,output_h5_name)){
             cout << label << " is not set" << endl;
@@ -239,11 +222,6 @@ void twodimensinal_diffusion::input_info(std::string input_file)
         }
         label = base_label + "/phi_file";
         if ( !tp.getInspectedValue(label,phi_file)){
-            cout << label << " is not set" << endl;
-            exit(0);
-        }
-        label = base_label + "/phi_node_file";
-        if ( !tp.getInspectedValue(label,node_phi_file)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -298,11 +276,7 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
-        label = base_label + "/phi_node_file";
-        if ( !tp.getInspectedValue(label,node_phi_file)){
-            cout << label << " is not set" << endl;
-            exit(0);
-        }
+      
         label = base_label + "/output_h5_name";
         if ( !tp.getInspectedValue(label,output_h5_name)){
             cout << label << " is not set" << endl;
@@ -427,31 +401,37 @@ void twodimensinal_diffusion::export_vtu(const std::string &file, std::string ju
   fclose(fp);
 }
 
+void twodimensinal_diffusion::transform_point_data_to_cell_data(vector<double> &element_C, vector<double> C)
+{
+  for(int i=0; i<numOfElm; i++){
+    double tmp_C=0.0;
+    for(int j=0; j<element[i].size(); j++){
+      tmp_C+=C[element[i][j]];
+    }
+    tmp_C/=element[i].size();
+    element_C[i]=tmp_C*phi[i];
+  }
+}
+
 void twodimensinal_diffusion::dump(int ic)
 {
     if(material_judge=="S"){
-      vector<double> phiC(numOfNode);
-      for(int i=0; i<numOfNode; i++){
-        phiC[i] = phi_node[i]*C[i];
-      }
+      vector<double> phiC(numOfElm);
+      transform_point_data_to_cell_data(phiC, C);
       string filename = outputDir + "/solid_" + to_string(ic) + ".vtu";
-      export_vtu(filename, "point", phiC);
+      export_vtu(filename, "CELL", phiC);
     }
     if(material_judge=="F"){
-      vector<double> phiC(numOfNode);
-      for(int i=0; i<numOfNode; i++){
-        phiC[i] = phi_node[i]*C[i];
-      }
+      vector<double> phiC(numOfElm);
+      transform_point_data_to_cell_data(phiC, C);
       string filename = outputDir + "/fluid_" + to_string(ic) + ".vtu";
-      export_vtu(filename, "point", phiC);
+      export_vtu(filename, "CELL", phiC);
     }
     if(material_judge=="V"){
-      vector<double> phiC(numOfNode);
-      for(int i=0; i<numOfNode; i++){
-        phiC[i] = phi_node[i]*C[i];
-      }
+      vector<double> phiC(numOfElm);
+      transform_point_data_to_cell_data(phiC, C);
       string filename = outputDir + "/vessel_" + to_string(ic) + ".vtu";
-      export_vtu(filename, "point", phiC);
+      export_vtu(filename, "CELL", phiC);
     }
 }
 
@@ -486,7 +466,9 @@ void twodimensinal_diffusion::hdf5_dump(int ic)
     file.createGroup(Gr.c_str());
     Group group = file.openGroup(Gr.c_str());
     dataName = Gr + "/O17_concentration";
-    exportHDF5_double_1D(file, dataName, C, C.size());
+    vector<double> phiC(numOfElm);
+    transform_point_data_to_cell_data(phiC, C);
+    exportHDF5_double_1D(file, dataName, phiC, phiC.size());
   }
   else {
     H5File file(FILE_NAME, H5F_ACC_RDWR);
@@ -495,6 +477,8 @@ void twodimensinal_diffusion::hdf5_dump(int ic)
     file.createGroup(Gr.c_str());
     Group group = file.openGroup(Gr.c_str());
     dataName = Gr + "/O17_concentration";
-    exportHDF5_double_1D(file, dataName, C, C.size());
+    vector<double> phiC(numOfElm);
+    transform_point_data_to_cell_data(phiC, C);
+    exportHDF5_double_1D(file, dataName, phiC, phiC.size());
   }
 }

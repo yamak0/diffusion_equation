@@ -16,12 +16,11 @@
 class twodimensinal_diffusion{
     private:
         double diffusion_coefficient;
-        int numOfElm, numOfBoundaryNode;
+        int numOfBoundaryNode;
         std::string material_judge;
         int numofomp;
         std::string gauss_setting, outputDir;
-        std::string node_file, element_file, boundary_file, phi_file, phi_visualize_file, node_phi_file;
-        std::vector<double> C;
+        std::string node_file, element_file, boundary_file, phi_file;
         std::vector<std::vector<double>> D;
         std::vector<std::vector<double>> mass;
         std::vector<double> boundary_value;
@@ -30,13 +29,14 @@ class twodimensinal_diffusion{
         std::string output_h5_name;
     public:
         double dt;
-        int time, output_interval, numOfNode;
+        int time, output_interval, numOfNode, numOfElm;
         double coupling_coefficient;
         double coupling_coefficient_v;
         double coupling_coefficient_s;
         std::vector<double> mass_centralization;
         std::vector<int> boundary_node;
-        std::vector<double> phi, phi_v, phi_node;
+        std::vector<double> C;
+        std::vector<double> phi, phi_v;
         std::vector<std::vector<double>> node;
         std::vector<std::vector<int>> element;
         TextParser tp;
@@ -62,5 +62,6 @@ class twodimensinal_diffusion{
         void hdf5_dump(int ic);
         void exportHDF5_double_1D(H5::H5File &file, const std::string &dataName, std::vector<double> i_data, int i_dim);
         double access_c(int ic);
+        void transform_point_data_to_cell_data(std::vector<double> &phiC, std::vector<double> C);
 };
 #endif
