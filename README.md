@@ -15,6 +15,7 @@
 - solid_phi.dat : 各要素の固体領域の相割合
 - boundary_vessel.dat : 血管領域の境界条件
 - vessel_phi.dat : 各要素の血管領域の相割合
+- evaluation_C.dat : 評価用のO17濃度データ
 
 # コードの動かし方
 build.shを実行するとコードが自動でビルドされます．

@@ -30,9 +30,9 @@ class twodimensinal_diffusion{
     public:
         double dt;
         int time, output_interval, numOfNode, numOfElm;
-        double coupling_coefficient;
-        double coupling_coefficient_v;
-        double coupling_coefficient_s;
+        double coupling_coefficient_vi;
+        double coupling_coefficient_vc;
+        double coupling_coefficient_ci;
         std::vector<double> mass_centralization;
         std::vector<int> boundary_node;
         std::vector<double> C;
@@ -56,12 +56,14 @@ class twodimensinal_diffusion{
         void gauss_point_setting();
         void matrix_initialize();
         void calc_matrix();
-        void boundary_setting(double time);
-        void time_step(std::vector<double> R, double time);
+        void boundary_setting(double time, std::vector<double> Q_cv, std::vector<double> Q_iv);
+        void time_step(std::vector<double> Q1, std::vector<double> Q2, double time);
+
         void dump(int ic);
         void hdf5_dump(int ic);
         void exportHDF5_double_1D(H5::H5File &file, const std::string &dataName, std::vector<double> i_data, int i_dim);
         double access_c(int ic);
-        void transform_point_data_to_cell_data(std::vector<double> &phiC, std::vector<double> C);
+        void transform_point_data_to_cell_data(std::vector<double> &element_C, std::vector<double> C);
+        void transform_point_data_to_cell_data_phi(std::vector<double> &phiC, std::vector<double> C);
 };
 #endif

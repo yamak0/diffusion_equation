@@ -160,13 +160,13 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
-        label = base_label + "/couplint_coefficient_v";
-        if ( !tp.getInspectedValue(label,coupling_coefficient_v)){
+        label = base_label + "/couplint_coefficient_vc";
+        if ( !tp.getInspectedValue(label,coupling_coefficient_vc)){
             cout << label << " is not set" << endl;
             exit(0);
         }
-        label = base_label + "/couplint_coefficient_s";
-        if ( !tp.getInspectedValue(label,coupling_coefficient_s)){
+        label = base_label + "/couplint_coefficient_ci";
+        if ( !tp.getInspectedValue(label,coupling_coefficient_ci)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -215,8 +215,8 @@ void twodimensinal_diffusion::input_info(std::string input_file)
             cout << label << " is not set" << endl;
             exit(0);
         }
-        label = base_label + "/couplint_coefficient";
-        if ( !tp.getInspectedValue(label,coupling_coefficient)){
+        label = base_label + "/couplint_coefficient_vi";
+        if ( !tp.getInspectedValue(label,coupling_coefficient_vi)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -263,11 +263,6 @@ void twodimensinal_diffusion::input_info(std::string input_file)
         }
         label = base_label + "/boundary_file";
         if ( !tp.getInspectedValue(label,boundary_file)){
-            cout << label << " is not set" << endl;
-            exit(0);
-        }
-        label = base_label + "/couplint_coefficient";
-        if ( !tp.getInspectedValue(label,coupling_coefficient)){
             cout << label << " is not set" << endl;
             exit(0);
         }
@@ -401,7 +396,7 @@ void twodimensinal_diffusion::export_vtu(const std::string &file, std::string ju
   fclose(fp);
 }
 
-void twodimensinal_diffusion::transform_point_data_to_cell_data(vector<double> &element_C, vector<double> C)
+void twodimensinal_diffusion::transform_point_data_to_cell_data_phi(vector<double> &phi_C, vector<double> C)
 {
   for(int i=0; i<numOfElm; i++){
     double tmp_C=0.0;
@@ -409,7 +404,7 @@ void twodimensinal_diffusion::transform_point_data_to_cell_data(vector<double> &
       tmp_C+=C[element[i][j]];
     }
     tmp_C/=element[i].size();
-    element_C[i]=tmp_C*phi[i];
+    phi_C[i]=tmp_C*phi[i];
   }
 }
 
@@ -417,19 +412,19 @@ void twodimensinal_diffusion::dump(int ic)
 {
     if(material_judge=="S"){
       vector<double> phiC(numOfElm);
-      transform_point_data_to_cell_data(phiC, C);
+      transform_point_data_to_cell_data_phi(phiC, C);
       string filename = outputDir + "/solid_" + to_string(ic) + ".vtu";
       export_vtu(filename, "CELL", phiC);
     }
     if(material_judge=="F"){
       vector<double> phiC(numOfElm);
-      transform_point_data_to_cell_data(phiC, C);
+      transform_point_data_to_cell_data_phi(phiC, C);
       string filename = outputDir + "/fluid_" + to_string(ic) + ".vtu";
       export_vtu(filename, "CELL", phiC);
     }
     if(material_judge=="V"){
       vector<double> phiC(numOfElm);
-      transform_point_data_to_cell_data(phiC, C);
+      transform_point_data_to_cell_data_phi(phiC, C);
       string filename = outputDir + "/vessel_" + to_string(ic) + ".vtu";
       export_vtu(filename, "CELL", phiC);
     }

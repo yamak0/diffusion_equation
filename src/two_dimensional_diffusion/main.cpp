@@ -46,14 +46,11 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
   fprintf(fp, "</Cells>\n");
 
   fprintf(fp, "<PointData>\n");
-  fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
-  offset += sizeof(int) + sizeof(double) * element.size();
-
-  
-
   fprintf(fp, "</PointData>\n");
 
   fprintf(fp, "<CellData>\n");
+  fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
+  offset += sizeof(int) + sizeof(double) * element.size();
   fprintf(fp, "</CellData>\n");
   fprintf(fp, "</Piece>\n");
   fprintf(fp, "</UnstructuredGrid>\n");
@@ -79,11 +76,11 @@ void export_vtu(const std::string &file, vector<vector<int>> element, vector<vec
   ofs.write((char *)data_d, size);
 
   num=0;
-  for (int ic = 0; ic < node.size(); ic++){
+  for (int ic = 0; ic < element.size(); ic++){
       data_d[num]   = C[ic];
       num++;
   }
-  size=sizeof(double)*node.size();
+  size=sizeof(double)*element.size();
   ofs.write((char *)&size, sizeof(size));
   ofs.write((char *)data_d, size);
 
@@ -175,22 +172,27 @@ int main(int argc,char *argv[])
   Vessel.calc_matrix();
 
   cout << "set boundary" << endl;
-  Vessel.boundary_setting(0.0);
-  C_sum.resize(Vessel.numOfNode);
+  vector<double> Q_vc(Vessel.numOfElm), Q_cv(Vessel.numOfElm), Q_vi(Vessel.numOfElm), Q_iv(Vessel.numOfElm), Q_ci(Vessel.numOfElm), Q_ic(Vessel.numOfElm);
+  Vessel.boundary_setting(0.0, Q_cv, Q_iv);
+  C_sum.resize(Vessel.numOfElm);
 
   cout << "main loop" << endl;
   for(int i=0; i<Vessel.time; i++){
-    Vessel.boundary_setting(Vessel.dt*i);
-    vector<double> R_fluid(Fluid.numOfNode,0.0);
-    vector<double> R_solid(Fluid.numOfNode,0.0);
-    #pragma omp parallel for
-    for(int j=0; j<Fluid.numOfNode; j++){
-      R_fluid[j] = -Fluid.coupling_coefficient_v*(Vessel.mass_centralization[j]*(Fluid.access_c(j)-Vessel.access_c(j)))\
-      -Fluid.coupling_coefficient_s*(Solid.mass_centralization[j]*(Fluid.access_c(j)-Solid.access_c(j)));
-      R_solid[j] = -Solid.coupling_coefficient*(Fluid.mass_centralization[j]*(Solid.access_c(j)-Fluid.access_c(j)));
+    vector<double> element_C_vessel(Vessel.numOfElm), element_C_Fluid(Fluid.numOfElm), element_C_Solid(Solid.numOfElm);
+    Vessel.transform_point_data_to_cell_data(element_C_vessel, Vessel.C);
+    Fluid.transform_point_data_to_cell_data(element_C_Fluid, Fluid.C);
+    Solid.transform_point_data_to_cell_data(element_C_Solid, Solid.C);
+    for(int j=0; j<Vessel.numOfElm; j++){
+      Q_vc[j] = Fluid.coupling_coefficient_vc*sqrt(Vessel.phi[j])*(element_C_vessel[j]-element_C_Fluid[j]);
+      Q_vi[j] = Solid.coupling_coefficient_vi*sqrt(Vessel.phi[j])*(element_C_vessel[j]-element_C_Solid[j]);
+      Q_cv[j] = Fluid.coupling_coefficient_vc*sqrt(Vessel.phi[j])*(element_C_Fluid[j]-element_C_vessel[j]);
+      Q_ci[j] = Fluid.coupling_coefficient_ci*sqrt(Fluid.phi[j])*(element_C_Fluid[j]-element_C_Solid[j]);
+      Q_iv[j] = Solid.coupling_coefficient_vi*sqrt(Vessel.phi[j])*(element_C_Solid[j]-element_C_vessel[j]);
+      Q_ic[j] = Fluid.coupling_coefficient_ci*sqrt(Fluid.phi[j])*(element_C_Solid[j]-element_C_Fluid[j]);
     }
-    Fluid.time_step(R_fluid, Vessel.dt*i);
-    Solid.time_step(R_solid, Vessel.dt*i);
+    Vessel.boundary_setting(Vessel.dt*i, Q_vc, Q_vi);
+    Fluid.time_step(Q_cv, Q_ci, Vessel.dt*i);
+    Solid.time_step(Q_iv, Q_ic, Vessel.dt*i);
     
     if(i%Fluid.output_interval==0){
       Fluid.dump(i/Fluid.output_interval);
@@ -205,18 +207,17 @@ int main(int argc,char *argv[])
       Vessel.hdf5_dump(i/Vessel.output_interval);
     }
     if(i%Vessel.output_interval==0){
-      vector<double> C_sum(Vessel.numOfElm);
       vector<double> Vessel_phiC(Vessel.numOfElm),CSF_phiC(Fluid.numOfElm),ISF_phiC(Solid.numOfElm);
-      Vessel.transform_point_data_to_cell_data(Vessel_phiC, Vessel.C);
-      Fluid.transform_point_data_to_cell_data(CSF_phiC, Fluid.C);
-      Solid.transform_point_data_to_cell_data(ISF_phiC, Solid.C);
+      Vessel.transform_point_data_to_cell_data_phi(Vessel_phiC, Vessel.C);
+      Fluid.transform_point_data_to_cell_data_phi(CSF_phiC, Fluid.C);
+      Solid.transform_point_data_to_cell_data_phi(ISF_phiC, Solid.C);
       for(int j=0; j<Vessel.numOfElm; j++){
         C_sum[j] = Vessel_phiC[j] + CSF_phiC[j] + ISF_phiC[j];
       }
       string dir = "out_C";
       mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
       string filename = dir + "/test_" + to_string(i/Vessel.output_interval) + ".vtu";
-      cout << 
+      cout << filename << endl;
       hdf5_dump("sum_O17.h5",i/Vessel.output_interval,C_sum);
       export_vtu(filename,Vessel.element,Vessel.node,C_sum);
     }
