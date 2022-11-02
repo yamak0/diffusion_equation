@@ -12,4 +12,4 @@ test
 *.h5
 Onedimensional*
 TwoDimensional*
-*.sh
+build.sh

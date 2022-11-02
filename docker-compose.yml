@@ -1,0 +1,9 @@
+version: '2'
+services:
+  app:
+    build: .
+    # command: sh docker_build.sh
+    volumes:
+      - .:/work
+    stdin_open: true
+    tty: true
