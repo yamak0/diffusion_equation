@@ -16,6 +16,7 @@ target_include_directories(Base PUBLIC
 target_link_libraries(Base PRIVATE
   ${TP_LIBRARY}
   ${HDF5_LIBRARIES}
+  ${MKL_LIBRARIES}
   iomp5
 )
 

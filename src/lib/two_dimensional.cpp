@@ -31,6 +31,7 @@ void twodimensinal_diffusion::boundary_initialize()
         update_point.push_back(i);
       }
     }
+    numOfUpdatePoint=update_point.size();
 }
 
 
@@ -38,7 +39,7 @@ void twodimensinal_diffusion::gauss_point_setting()
 {
     if(gauss_setting=="square"){
         gauss.resize(4);
-        for(int i=0; i<gauss.size(); i++){
+        for(int i=0; i<static_cast<int>(gauss.size()); i++){
             gauss[i].resize(2);
         }
     }
@@ -51,17 +52,9 @@ void twodimensinal_diffusion::gauss_point_setting()
 
 void twodimensinal_diffusion::matrix_initialize()
 {
-    D.resize(node.size());
-    for(int i=0; i<node.size(); i++){
-        D[i].resize(node.size());
-    }
-
-    mass.resize(node.size());
-    for(int i=0; i<node.size(); i++){
-        mass[i].resize(node.size());
-    }
-
-    mass_centralization.resize(node.size());
+    D.resize(numOfNode*numOfNode);
+    mass.resize(numOfNode*numOfNode);
+    mass_centralization.resize(numOfNode);
 }
 
 void twodimensinal_diffusion::calc_dxdr(int ic, std::vector<std::vector<double>> node, std::vector<std::vector<int>> element, std::vector<std::vector<double>> &dxdr, std::vector<std::vector<double>> dNdr)
@@ -102,12 +95,12 @@ void twodimensinal_diffusion::calc_dNdx(vector<vector<double>> &dNdx, vector<vec
 void twodimensinal_diffusion::calc_matrix()
 {
   #pragma omp parallel for
-  for(int i=0; i<element.size(); i++){
+  for(int i=0; i<numOfElm; i++){
+    int numOfInElm = static_cast<int>(element[i].size());
     vector<double> N(4); 
     vector<vector<double>> dNdr(4, vector<double>(2));
-    double volume=0.0;
-    vector<vector<double>> element_D(4, vector<double>(4,0.0));
-    vector<vector<double>> element_mass(4, vector<double>(4,0.0));
+    vector<double> element_D(numOfInElm*numOfInElm,0.0);
+    vector<double> element_mass(numOfInElm*numOfInElm,0.0);
     vector<double> element_mass_centralization(4,0.0);
     for(int j=0; j<4; j++){
       ShapeFunction2D::C2D4_N(N,gauss[j][0],gauss[j][1]);
@@ -120,31 +113,25 @@ void twodimensinal_diffusion::calc_matrix()
       calc_dNdx(dNdx, dNdr, drdx);
       for(int k=0; k<4; k++){
         for(int l=0; l<4; l++){
+          element_mass[k*numOfInElm+l] = N[k] * N[l];
           for(int p=0; p<2; p++){
-            element_D[k][l] += dNdx[k][p]*dNdx[l][p];
+            element_D[k*numOfInElm+l] += dNdx[k][p]*dNdx[l][p];
           }
         }
       }
       
       for(int k=0; k<4; k++){
         for(int l=0; l<4; l++){
-          element_mass[k][l] = N[k] * N[l];
-        }
-      }
-      
-      for(int k=0; k<4; k++){
-        for(int l=0; l<4; l++){
-          D[element[i][k]][element[i][l]] += diffusion_coefficient * element_D[k][l] * phi[i] * detJ;
-          mass[element[i][k]][element[i][l]] += element_mass[k][l] * phi[i] * detJ;
+          D[element[i][k]*numOfNode+element[i][l]] += diffusion_coefficient * element_D[k*numOfInElm+l] * phi[i] * detJ;
+          mass[element[i][k]*numOfNode+element[i][l]] += element_mass[k*numOfInElm+l] * phi[i] * detJ;
         }
       }
     }
   }
 
-  for(int i=0; i<mass.size(); i++){
-    mass_centralization[i]=0.0;
-    for(int j=0; j<mass[i].size(); j++){
-      mass_centralization[i] += mass[i][j];
+  for(int i=0; i<numOfNode; i++){
+    for(int j=0; j<numOfNode; j++){
+      mass_centralization[i] += mass[i*numOfNode+j];
     }
   }
 }
@@ -188,7 +175,7 @@ void twodimensinal_diffusion::time_step(vector<double> Q1, vector<double> Q2, do
   vector<double> DC(numOfNode,0.0);
   vector<double> DcR(numOfNode,0.0);
   vector<double> MDcR(numOfNode,0.0);
-  vector<double> MDC(node.size(),0.0);
+  vector<double> MDC(numOfNode,0.0);
   vector<double> tmp_C(numOfNode);
 
   if(material_judge=="F"){
@@ -213,7 +200,7 @@ void twodimensinal_diffusion::time_step(vector<double> Q1, vector<double> Q2, do
       #pragma omp for
       for(int i=0; i<numOfNode; i++){
         for(int j=0; j<numOfNode; j++){
-            DC[i] += D[i][j] * (C[j]);
+            DC[i] += D[i*numOfNode+j] * (C[j]);
         }
       }
       #pragma omp for
@@ -248,10 +235,11 @@ void twodimensinal_diffusion::time_step(vector<double> Q1, vector<double> Q2, do
         cell_to_point_iv[i].first /= (double)cell_to_point_iv[i].second;
         cell_to_point_ci[i].first /= (double)cell_to_point_ci[i].second;
       }
+      //MKL_matrix_product(D, C, DC, numOfNode, numOfNode, 1);
       #pragma omp for
       for(int i=0; i<numOfNode; i++){
         for(int j=0; j<numOfNode; j++){
-            DC[i] += D[i][j] * (C[j]);
+            DC[i] += D[i*numOfNode+j] * (C[j]);
         }
       }
       #pragma omp for
@@ -261,7 +249,7 @@ void twodimensinal_diffusion::time_step(vector<double> Q1, vector<double> Q2, do
         tmp_C[i] = C[i] - dt * MDcR[i];
       }  
       #pragma omp for
-      for(int i=0; i<update_point.size(); i++){
+      for(int i=0; i<numOfUpdatePoint; i++){
         C[update_point[i]] = tmp_C[update_point[i]];
       }
     }  
@@ -284,4 +272,39 @@ void twodimensinal_diffusion::transform_point_data_to_cell_data(std::vector<doub
     tmp_C/=element[i].size();
     element_C[i]=tmp_C;
   } 
+}
+
+// C=A*B
+void twodimensinal_diffusion::MKL_matrix_product(const vector<vector<double>> A_r, const vector<double> B_r, vector<double> &C_r, int m, int k, int n)
+{
+  double *A, *B, *C;
+  A = (double*)mkl_malloc(m*k*sizeof(double),64);
+  B = (double*)mkl_malloc(k*n*sizeof(double),64);
+  C = (double*)mkl_malloc(m*n*sizeof(double),64);
+  double alpha, beta;
+  alpha = 1.0; beta = 0.0;
+  if (A == NULL || B == NULL || C == NULL) {
+    //ERROR: Can't allocate memory for matrices. Aborting...
+    mkl_free(A);
+    mkl_free(B);
+    mkl_free(C);
+    exit(1);
+  }
+  //Intializing matrix data
+  for(int i=0; i<m; i++){
+    for(int j=0; j<k; j++){
+      A[i*m+j]=A_r[i][j];
+    }
+  }
+  for(int i=0; i<m; i++){
+    B[i]=B_r[i];
+    C[i]=0.0;
+  }
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, alpha, A, k, B, n, beta, C, n);
+  for(int i=0; i<m; i++){
+    C_r[i]=C[i];
+  }
+  mkl_free(A);
+  mkl_free(B);
+  mkl_free(C);
 }

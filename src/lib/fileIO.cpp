@@ -30,7 +30,7 @@ void twodimensinal_diffusion::read_geometry()
     numOfNode=CountNumbersOfTextLines(node_file);
     node.resize(numOfNode);
     C.resize(numOfNode);
-    for(int i=0; i<C.size(); i++){
+    for(int i=0; i<numOfNode; i++){
         C[i] = 0.0;
     }
     for(int i=0; i<numOfNode; i++){
@@ -52,7 +52,7 @@ void twodimensinal_diffusion::read_geometry()
 
     numOfElm=CountNumbersOfTextLines(element_file);
     element.resize(numOfElm);
-    for(int i=0; i<element.size(); i++){
+    for(int i=0; i<numOfElm; i++){
         element[i].resize(4);
     }
     ifs.open(element_file);
@@ -299,30 +299,30 @@ void twodimensinal_diffusion::export_vtu(const std::string &file, std::string ju
 
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n");
   fprintf(fp, "<UnstructuredGrid>\n");
-  fprintf(fp, "<Piece NumberOfPoints= \"%d\" NumberOfCells= \"%d\" >\n", node.size(), element.size());
+  fprintf(fp, "<Piece NumberOfPoints= \"%d\" NumberOfCells= \"%d\" >\n", numOfNode, numOfElm);
   fprintf(fp, "<Points>\n");
   int offset = 0;
   fprintf(fp, "<DataArray type=\"Float64\" Name=\"Position\" NumberOfComponents=\"3\" format=\"appended\" offset=\"%d\"/>\n",offset);
-  offset += sizeof(int) + sizeof(double) * node.size() * 3;
+  offset += sizeof(int) + sizeof(double) * numOfNode * 3;
   fprintf(fp, "</Points>\n");
 
   fprintf(fp, "<Cells>\n");
   fprintf(fp, "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">\n");
-  for (int i = 0; i < element.size(); i++){
-    for (int j = 0; j < element[i].size(); j++) fprintf(fp, "%d ", element[i][j]);
+  for (int i = 0; i < numOfElm; i++){
+    for (int j = 0; j < static_cast<int>(element[i].size()); j++) fprintf(fp, "%d ", element[i][j]);
     fprintf(fp, "\n");
   }
   fprintf(fp, "</DataArray>\n");
   fprintf(fp, "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">\n");
   int num = 0;
-  for (int i = 0; i < element.size(); i++)
+  for (int i = 0; i < numOfElm; i++)
   {
-    num += element[i].size();
+    num += static_cast<int>(element[i].size());
     fprintf(fp, "%d\n", num);
   }
   fprintf(fp, "</DataArray>\n");
   fprintf(fp, "<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">\n");
-  for (int i = 0; i < element.size(); i++) fprintf(fp, "%d\n", 9);
+  for (int i = 0; i < numOfElm; i++) fprintf(fp, "%d\n", 9);
     
   fprintf(fp, "</DataArray>\n");
   fprintf(fp, "</Cells>\n");
@@ -330,14 +330,14 @@ void twodimensinal_diffusion::export_vtu(const std::string &file, std::string ju
   fprintf(fp, "<PointData>\n");
   if(judge=="point"){
     fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
-    offset += sizeof(int) + sizeof(double) * node.size();
+    offset += sizeof(int) + sizeof(double) * numOfNode;
   }
   fprintf(fp, "</PointData>\n");
 
   fprintf(fp, "<CellData>\n");
   if(judge=="CELL"){
     fprintf(fp, "<DataArray type=\"Float64\" Name=\"pressure[Pa]\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\"/>\n",offset);
-    offset += sizeof(int) + sizeof(double) * element.size();
+    offset += sizeof(int) + sizeof(double) * numOfElm;
   }
   fprintf(fp, "</CellData>\n");
   fprintf(fp, "</Piece>\n");
@@ -348,10 +348,10 @@ void twodimensinal_diffusion::export_vtu(const std::string &file, std::string ju
 
   fstream ofs;
   ofs.open(file.c_str(), ios::out | ios::app | ios_base::binary);
-  double *data_d = new double[node.size()*3];
+  double *data_d = new double[numOfNode*3];
   num = 0;
   int size=0;
-  for (int ic = 0; ic < node.size(); ic++){
+  for (int ic = 0; ic < numOfNode; ic++){
     data_d[num] = node[ic][0];
     num++;
     data_d[num] = node[ic][1];
@@ -359,30 +359,30 @@ void twodimensinal_diffusion::export_vtu(const std::string &file, std::string ju
     data_d[num] = 0.0;
     num++;
   }
-  size=sizeof(double)*node.size()*3;
+  size=sizeof(double)*numOfNode*3;
   ofs.write((char *)&size, sizeof(size));
   ofs.write((char *)data_d, size);
 
   num=0;
   if(judge=="point"){
-    for (int ic = 0; ic < node.size(); ic++){
+    for (int ic = 0; ic < numOfNode; ic++){
         data_d[num]   = output_value[ic];
         num++;
     }
-    size=sizeof(double)*node.size();
+    size=sizeof(double)*numOfNode;
     ofs.write((char *)&size, sizeof(size));
     ofs.write((char *)data_d, size);
   }
   if(judge=="CELL"){
-    for (int ic = 0; ic < element.size(); ic++){
+    for (int ic = 0; ic < numOfElm; ic++){
         data_d[num]   = output_value[ic];
         num++;
     }
-    size=sizeof(double)*element.size();
+    size=sizeof(double)*numOfElm;
     ofs.write((char *)&size, sizeof(size));
     ofs.write((char *)data_d, size);
   }
-  delete data_d;
+  delete[] data_d;
 
   ofs.close();
 
@@ -400,7 +400,7 @@ void twodimensinal_diffusion::transform_point_data_to_cell_data_phi(vector<doubl
 {
   for(int i=0; i<numOfElm; i++){
     double tmp_C=0.0;
-    for(int j=0; j<element[i].size(); j++){
+    for(int j=0; j<static_cast<int>(element[i].size()); j++){
       tmp_C+=C[element[i][j]];
     }
     tmp_C/=element[i].size();
@@ -434,13 +434,13 @@ void twodimensinal_diffusion::exportHDF5_double_1D(H5::H5File &file, const std::
 {
   H5std_string DATASET_NAME(dataName.c_str());
 
-  hsize_t dim[1] = {i_dim}; // dataset dimensions
+  hsize_t dim[1] = {static_cast<hsize_t>(i_dim)}; // dataset dimensions
   H5::DataSpace dataspace(1, dim);
 
   double *data;
   data = new double[i_data.size()];
 
-  for (int i = 0; i < i_data.size(); i++) {
+  for (int i = 0; i < static_cast<int>(i_data.size()); i++) {
     data[i] = i_data[i];
   }
 
