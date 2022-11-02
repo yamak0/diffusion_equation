@@ -8,3 +8,8 @@ solid
 fluid
 out_C
 test
+*.dat
+*.h5
+Onedimensional*
+TwoDimensional*
+*.sh

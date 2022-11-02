@@ -26,6 +26,11 @@ void twodimensinal_diffusion::boundary_initialize()
         }
     }
     ifs.close();   
+    for(int i=0; i<numOfNode; i++){
+      if(boundary_node_judge.find(i)==boundary_node_judge.end()){
+        update_point.push_back(i);
+      }
+    }
 }
 
 
@@ -169,9 +174,11 @@ void twodimensinal_diffusion::boundary_setting(double time_t, vector<double> Q_c
     double sum_1=0.0;
     double sum_2=0.0;
     for(int i=0; i<numOfBoundaryNode; i++){
-      double param = 0.020, sigma=0.8, mu=-20.0;
-      double time_tmp = ((time_t-mu)-(time*dt-mu)/2.0)*param;
-      C[boundary_node[i]] = (exp(-pow(time_tmp,2.0)/(2.0*pow(sigma,2.0)))-dt*cell_to_point_cv[boundary_node[i]].first-dt*cell_to_point_iv[boundary_node[i]].first)*boundary_value[i];
+      if(time_t<=60.0) C[boundary_node[i]] = ((boundary_value[i]/60.0)*time_t-dt*cell_to_point_cv[boundary_node[i]].first-dt*cell_to_point_iv[boundary_node[i]].first)*boundary_value[i];
+      if(time_t>60.0) C[boundary_node[i]] = (boundary_value[i]-dt*cell_to_point_cv[boundary_node[i]].first-dt*cell_to_point_iv[boundary_node[i]].first)*boundary_value[i];
+      //double param = 0.020, sigma=0.8, mu=-20.0;
+      //double time_tmp = ((time_t-mu)-(time*dt-mu)/2.0)*param;
+      //C[boundary_node[i]] = (exp(-pow(time_tmp,2.0)/(2.0*pow(sigma,2.0)))-dt*cell_to_point_cv[boundary_node[i]].first-dt*cell_to_point_iv[boundary_node[i]].first)*boundary_value[i];
     }
   }
 }
@@ -182,65 +189,80 @@ void twodimensinal_diffusion::time_step(vector<double> Q1, vector<double> Q2, do
   vector<double> DcR(numOfNode,0.0);
   vector<double> MDcR(numOfNode,0.0);
   vector<double> MDC(node.size(),0.0);
+  vector<double> tmp_C(numOfNode);
 
   if(material_judge=="F"){
     vector<pair<double, int>> cell_to_point_cv(numOfNode);
     vector<pair<double, int>> cell_to_point_ci(numOfNode);
-    for(int i=0; i<numOfElm; i++){
-      for(int j=0; j<element[i].size(); j++){
-        cell_to_point_cv[element[i][j]].first += Q1[i];
-        cell_to_point_ci[element[i][j]].first += Q2[i];
-        cell_to_point_cv[element[i][j]].second+=1;
-        cell_to_point_ci[element[i][j]].second+=1;
+    #pragma omp parallel
+    {
+      #pragma omp for
+      for(int i=0; i<numOfElm; i++){
+        for(int j=0; j<element[i].size(); j++){
+          cell_to_point_cv[element[i][j]].first += Q1[i];
+          cell_to_point_ci[element[i][j]].first += Q2[i];
+          cell_to_point_cv[element[i][j]].second+=1;
+          cell_to_point_ci[element[i][j]].second+=1;
+        }
       }
-    }
-    for(int i=0; i<numOfNode; i++){
-      cell_to_point_cv[i].first /= double(cell_to_point_cv[i].second);
-      cell_to_point_ci[i].first /= double(cell_to_point_ci[i].second);
-    }
-    #pragma omp parallel for
-    for(int i=0; i<numOfNode; i++){
-      for(int j=0; j<numOfNode; j++){
-          DC[i] += D[i][j] * (C[j]);
+      #pragma omp for
+      for(int i=0; i<numOfNode; i++){
+        cell_to_point_cv[i].first /= double(cell_to_point_cv[i].second);
+        cell_to_point_ci[i].first /= double(cell_to_point_ci[i].second);
       }
-    }
-    #pragma omp parallel for
-    for(int i=0; i<numOfNode; i++){
-      DcR[i] = DC[i]-(cell_to_point_cv[i].first+cell_to_point_ci[i].first);
-      if(boundary_node_judge.find(i)==boundary_node_judge.end()){
+      #pragma omp for
+      for(int i=0; i<numOfNode; i++){
+        for(int j=0; j<numOfNode; j++){
+            DC[i] += D[i][j] * (C[j]);
+        }
+      }
+      #pragma omp for
+      for(int i=0; i<numOfNode; i++){
+        DcR[i] = DC[i]-(cell_to_point_cv[i].first+cell_to_point_ci[i].first);
         MDcR[i] = 1.0/mass_centralization[i]*DcR[i];
-        C[i] = C[i] - dt * MDcR[i];
+        tmp_C[i] = C[i] - dt * MDcR[i];
+      }  
+      #pragma omp for
+      for(int i=0; i<update_point.size(); i++){
+        C[update_point[i]] = tmp_C[update_point[i]];
       }
-    }  
+    }
     boundary_setting(time_t, Q1, Q2);
   }
   else if(material_judge=="S"){
     vector<pair<double, int>> cell_to_point_iv(numOfNode);
     vector<pair<double, int>> cell_to_point_ci(numOfNode);
-    for(int i=0; i<numOfElm; i++){
-      for(int j=0; j<element[i].size(); j++){
-        cell_to_point_iv[element[i][j]].first += Q1[i];
-        cell_to_point_ci[element[i][j]].first += Q2[i];
-        cell_to_point_iv[element[i][j]].second+=1;
-        cell_to_point_ci[element[i][j]].second+=1;
+    #pragma omp parallel
+    {
+      #pragma omp for
+      for(int i=0; i<numOfElm; i++){
+        for(int j=0; j<element[i].size(); j++){
+          cell_to_point_iv[element[i][j]].first += Q1[i];
+          cell_to_point_ci[element[i][j]].first += Q2[i];
+          cell_to_point_iv[element[i][j]].second+=1;
+          cell_to_point_ci[element[i][j]].second+=1;
+        }
       }
-    }
-    for(int i=0; i<numOfNode; i++){
-      cell_to_point_iv[i].first /= (double)cell_to_point_iv[i].second;
-      cell_to_point_ci[i].first /= (double)cell_to_point_ci[i].second;
-    }
-    #pragma omp parallel for
-    for(int i=0; i<numOfNode; i++){
-      for(int j=0; j<numOfNode; j++){
-          DC[i] += D[i][j] * (C[j]);
+      #pragma omp for
+      for(int i=0; i<numOfNode; i++){
+        cell_to_point_iv[i].first /= (double)cell_to_point_iv[i].second;
+        cell_to_point_ci[i].first /= (double)cell_to_point_ci[i].second;
       }
-    }
-    #pragma omp parallel for
-    for(int i=0; i<numOfNode; i++){
-      DcR[i] = DC[i]-(cell_to_point_iv[i].first+cell_to_point_ci[i].first);
-      if(boundary_node_judge.find(i)==boundary_node_judge.end()){
+      #pragma omp for
+      for(int i=0; i<numOfNode; i++){
+        for(int j=0; j<numOfNode; j++){
+            DC[i] += D[i][j] * (C[j]);
+        }
+      }
+      #pragma omp for
+      for(int i=0; i<numOfNode; i++){
+        DcR[i] = DC[i]-(cell_to_point_iv[i].first+cell_to_point_ci[i].first);
         MDcR[i] = 1.0/mass_centralization[i]*DcR[i];
-        C[i] = C[i] - dt * MDcR[i];
+        tmp_C[i] = C[i] - dt * MDcR[i];
+      }  
+      #pragma omp for
+      for(int i=0; i<update_point.size(); i++){
+        C[update_point[i]] = tmp_C[update_point[i]];
       }
     }  
     boundary_setting(time_t, Q1, Q2);

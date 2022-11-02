@@ -35,6 +35,7 @@ class twodimensinal_diffusion{
         double coupling_coefficient_ci;
         std::vector<double> mass_centralization;
         std::vector<int> boundary_node;
+        std::vector<int> update_point;
         std::vector<double> C;
         std::vector<double> phi, phi_v;
         std::vector<std::vector<double>> node;
